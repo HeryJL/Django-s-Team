@@ -2,8 +2,8 @@ from django.contrib import admin
 
 from .models import Annonce, Categorie, HistoriqueStatut, MessageSignalement, Signalement
 
-admin.site.site_header = "Suivi des interventions — administration"
-admin.site.site_title = "Interventions"
+admin.site.site_header = "INTER-V — administration"
+admin.site.site_title = "INTER-V"
 
 
 @admin.register(Categorie)

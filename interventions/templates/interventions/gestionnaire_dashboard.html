@@ -1,19 +1,19 @@
 {% extends "base.html" %}
 {% block title %}Tableau de bord gestionnaire{% endblock %}
 {% block content %}
-<h1 class="h3 mb-3">Demandes à traiter</h1>
+<div class="mb-4"><p class="eyebrow mb-1"><i class="bi bi-grid-1x2 me-2"></i>Pilotage opérationnel</p><h1 class="page-title mb-0">Demandes à traiter</h1></div>
 <div class="row g-3 mb-4">
   <div class="col-6 col-md-3"><div class="card text-center h-100"><div class="card-body">
-    <div class="display-6">{{ stats.total }}</div><div class="text-muted small">Total des demandes</div>
+    <div class="display-6"><i class="bi bi-collection me-2 text-primary"></i>{{ stats.total }}</div><div class="text-muted small">Total des demandes</div>
   </div></div></div>
   <div class="col-6 col-md-3"><div class="card text-center border-primary h-100"><div class="card-body">
-    <div class="display-6 text-primary">{{ stats.en_attente }}</div><div class="text-muted small">En attente</div>
+    <div class="display-6 text-primary"><i class="bi bi-hourglass-split me-2"></i>{{ stats.en_attente }}</div><div class="text-muted small">En attente</div>
   </div></div></div>
   <div class="col-6 col-md-3"><div class="card text-center border-warning h-100"><div class="card-body">
-    <div class="display-6">{{ stats.en_cours }}</div><div class="text-muted small">En cours</div>
+    <div class="display-6"><i class="bi bi-arrow-repeat me-2 text-warning"></i>{{ stats.en_cours }}</div><div class="text-muted small">En cours</div>
   </div></div></div>
   <div class="col-6 col-md-3"><div class="card text-center border-success h-100"><div class="card-body">
-    <div class="display-6 text-success">{{ stats.resolues }}</div><div class="text-muted small">Résolues</div>
+    <div class="display-6 text-success"><i class="bi bi-check2-circle me-2"></i>{{ stats.resolues }}</div><div class="text-muted small">Résolues</div>
   </div></div></div>
 </div>
 <p class="text-muted">Triées par priorité (haute d'abord) puis par date.</p>
