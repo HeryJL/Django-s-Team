@@ -20,17 +20,6 @@ Ouvrir http://127.0.0.1:8000/.
 (aucun mot de passe n'est écrit dans le code). Comptes créés : `gestionnaire`, `alice`, `bob`.
 Commande relançable sans doublons. Mot de passe perdu : `python manage.py changepassword gestionnaire`.
 
-## PostgreSQL (optionnel)
-
-Le sujet impose SQLite sans service externe : c'est le défaut. Pour utiliser PostgreSQL :
-
-```bash
-pip install -r requirements-postgres.txt
-# créer la base : createdb gestion_interventions
-export DJANGO_DB=postgres POSTGRES_DB=gestion_interventions POSTGRES_USER=postgres \
-       POSTGRES_PASSWORD=... POSTGRES_HOST=localhost POSTGRES_PORT=5432
-python manage.py migrate && python manage.py seed_demo && python manage.py runserver
-```
 
 ## Repartir d'une base propre
 
