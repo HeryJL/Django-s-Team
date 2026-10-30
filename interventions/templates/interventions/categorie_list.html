@@ -1,15 +1,31 @@
 {% extends "base.html" %}
 {% block title %}Catégories{% endblock %}
 {% block content %}
-<h1 class="h3 mb-3">Catégories de problèmes</h1>
-<div class="list-group">
-  {% for c in categories %}
-    <div class="list-group-item d-flex justify-content-between align-items-start">
-      <div><div class="fw-semibold">{{ c.nom }}</div><div class="small text-muted">{{ c.description }}</div></div>
-      <span class="badge text-bg-secondary">{{ c.nb_signalements }} demande{{ c.nb_signalements|pluralize }}</span>
-    </div>
-  {% empty %}
-    <div class="alert alert-info">Aucune catégorie.</div>
-  {% endfor %}
+<div class="page-head">
+  <div>
+    <p class="kicker">Référentiel</p>
+    <h1 class="page-title">Catégories de problèmes</h1>
+    <p class="page-sub">Chaque catégorie regroupe les demandes d’un même domaine technique.</p>
+  </div>
 </div>
+
+{% if categories %}
+  <ul class="cat-list">
+    {% for c in categories %}
+      <li>
+        <div>
+          <p class="cat-list-title">{{ c.nom }}</p>
+          {% if c.description %}<p class="cat-list-desc">{{ c.description }}</p>{% endif %}
+        </div>
+        <span class="badge bg-secondary">{{ c.nb_signalements }} demande{{ c.nb_signalements|pluralize }}</span>
+      </li>
+    {% endfor %}
+  </ul>
+{% else %}
+  <div class="empty-state">
+    <span class="empty-icon" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-tags"></use></svg></span>
+    <h2>Aucune catégorie</h2>
+    <p>Les catégories de problèmes n’ont pas encore été configurées.</p>
+  </div>
+{% endif %}
 {% endblock %}

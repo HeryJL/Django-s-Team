@@ -1,100 +1,126 @@
 {% extends "base.html" %}
 {% block title %}{{ signalement.titre }}{% endblock %}
 {% block content %}
-<div class="row g-4">
-  <div class="col-lg-7">
-    <div class="card"><div class="card-body">
-      <div class="d-flex justify-content-between align-items-start">
-        <h1 class="h4">{{ signalement.titre }}</h1>
-        <span class="badge {{ signalement.badge_statut }} fs-6">{{ signalement.get_statut_display }}</span>
-      </div>
-      <p class="mt-2">{{ signalement.description|linebreaksbr }}</p>
-      <dl class="row mb-0">
-        <dt class="col-sm-4">Lieu</dt><dd class="col-sm-8">{{ signalement.lieu }}</dd>
-        <dt class="col-sm-4">Catégorie</dt><dd class="col-sm-8">{{ signalement.categorie.nom }}</dd>
-        <dt class="col-sm-4">Priorité</dt>
-        <dd class="col-sm-8"><span class="badge text-bg-{{ signalement.couleur_priorite }}">{{ signalement.get_priorite_display }}</span></dd>
-        <dt class="col-sm-4">Demandeur</dt><dd class="col-sm-8">{{ signalement.demandeur.username }}</dd>
-        <dt class="col-sm-4">Gestionnaire</dt><dd class="col-sm-8">{{ signalement.gestionnaire.username|default:"— non assigné" }}</dd>
-        <dt class="col-sm-4">Créé le</dt><dd class="col-sm-8">{{ signalement.cree_le|date:"d/m/Y H:i" }}</dd>
-        {% if signalement.commentaire_resolution %}
-          <dt class="col-sm-4">Résolution</dt><dd class="col-sm-8">{{ signalement.commentaire_resolution|linebreaksbr }}</dd>
-        {% endif %}
-        {% if signalement.peut_etre_valide %}
-          <dt class="col-sm-4">Validation du demandeur</dt>
-          <dd class="col-sm-8">{% if signalement.validation_demandeur %}Validée{% else %}En attente{% endif %}</dd>
-          <dt class="col-sm-4">Validation du gestionnaire</dt>
-          <dd class="col-sm-8">{% if signalement.validation_gestionnaire %}Validée{% else %}En attente{% endif %}</dd>
-        {% endif %}
-      </dl>
-    </div></div>
+<div class="detail-head">
+  <p class="detail-ref">Demande n° {{ signalement.pk }}</p>
+  <h1>{{ signalement.titre }}</h1>
+  <div class="detail-meta">
+    <span class="badge {{ signalement.badge_statut }}">{{ signalement.get_statut_display }}</span>
+    <span class="badge text-bg-{{ signalement.couleur_priorite }}">Priorité {{ signalement.get_priorite_display|lower }}</span>
+    <span class="detail-ref">{{ signalement.categorie.nom }} · {{ signalement.cree_le|date:"d/m/Y" }}</span>
+  </div>
+</div>
 
-    <div class="d-flex flex-wrap gap-2 mt-3">
+<div class="detail-grid">
+  <div>
+    <section class="panel" aria-labelledby="titre-demande">
+      <div class="panel-head">
+        <h2 id="titre-demande">Détail de la demande</h2>
+        <span class="panel-count">Signalé par {{ signalement.demandeur.username }}</span>
+      </div>
+      <div class="panel-body detail-body">
+        <div class="detail-description">{{ signalement.description|linebreaksbr }}</div>
+        <dl class="facts">
+          <dt>Lieu</dt><dd>{{ signalement.lieu }}</dd>
+          <dt>Catégorie</dt><dd>{{ signalement.categorie.nom }}</dd>
+          <dt>Demandeur</dt><dd>{{ signalement.demandeur.username }}</dd>
+          <dt>Gestionnaire</dt><dd>{% if signalement.gestionnaire %}{{ signalement.gestionnaire.username }}{% else %}<span class="cell-muted">Non assigné</span>{% endif %}</dd>
+          <dt>Créée le</dt><dd>{{ signalement.cree_le|date:"d/m/Y à H:i" }}</dd>
+          {% if signalement.commentaire_resolution %}
+            <dt>Résolution</dt><dd>{{ signalement.commentaire_resolution|linebreaksbr }}</dd>
+          {% endif %}
+          {% if signalement.peut_etre_valide %}
+            <dt>Validation demandeur</dt>
+            <dd>{% if signalement.validation_demandeur %}<span class="badge bg-success">Validée</span>{% else %}<span class="badge bg-secondary">En attente</span>{% endif %}</dd>
+            <dt>Validation gestionnaire</dt>
+            <dd>{% if signalement.validation_gestionnaire %}<span class="badge bg-success">Validée</span>{% else %}<span class="badge bg-secondary">En attente</span>{% endif %}</dd>
+          {% endif %}
+        </dl>
+      </div>
+    </section>
+
+    <div class="action-bar">
       {% if est_auteur and signalement.peut_etre_retire %}
-        <a class="btn btn-outline-danger" href="{% url 'signalement_retirer' signalement.pk %}">Retirer ma demande</a>
+        <a class="btn btn--danger" href="{% url 'signalement_retirer' signalement.pk %}">Retirer ma demande</a>
       {% endif %}
       {% if est_gestionnaire %}
         {% if signalement.peut_etre_pris_en_charge %}
           <form method="post" action="{% url 'signalement_prendre_en_charge' signalement.pk %}">
             {% csrf_token %}
-            <button type="submit" class="btn btn-warning">Prendre en charge</button>
+            <button type="submit" class="btn btn--accent">Prendre en charge</button>
           </form>
         {% endif %}
         {% if signalement.peut_etre_resolu %}
-          <a class="btn btn-success" href="{% url 'signalement_resoudre' signalement.pk %}">Marquer comme résolue</a>
+          <a class="btn btn--success" href="{% url 'signalement_resoudre' signalement.pk %}">Marquer comme résolue</a>
         {% endif %}
       {% endif %}
       {% if signalement.peut_etre_valide %}
         {% if est_auteur and not signalement.validation_demandeur %}
           <form method="post" action="{% url 'signalement_valider_fermeture' signalement.pk %}">
-            {% csrf_token %}<button type="submit" class="btn btn-success">Valider la fermeture</button>
+            {% csrf_token %}<button type="submit" class="btn btn--success">Valider la fermeture</button>
           </form>
         {% endif %}
         {% if est_gestionnaire and not signalement.validation_gestionnaire %}
           <form method="post" action="{% url 'signalement_valider_fermeture' signalement.pk %}">
-            {% csrf_token %}<button type="submit" class="btn btn-success">Valider la fermeture</button>
+            {% csrf_token %}<button type="submit" class="btn btn--success">Valider la fermeture</button>
           </form>
         {% endif %}
         {% if est_auteur or est_gestionnaire %}
-          <form method="post" action="{% url 'signalement_refuser_fermeture' signalement.pk %}" class="d-flex gap-2 mt-2">
+          <form method="post" action="{% url 'signalement_refuser_fermeture' signalement.pk %}" class="inline-form">
             {% csrf_token %}
-            <input name="commentaire" class="form-control" placeholder="Motif du refus" required>
-            <button type="submit" class="btn btn-outline-danger">Refuser</button>
+            <label class="visually-hidden" for="motif-refus">Motif du refus</label>
+            <input id="motif-refus" name="commentaire" class="form-control" placeholder="Motif du refus" required>
+            <button type="submit" class="btn btn--danger">Refuser</button>
           </form>
         {% endif %}
       {% endif %}
-      <a class="btn btn-outline-secondary" href="{% if est_auteur %}{% url 'mes_signalements' %}{% else %}{% url 'gestionnaire_dashboard' %}{% endif %}">Retour</a>
+      <a class="btn btn--ghost" href="{% if est_auteur %}{% url 'mes_signalements' %}{% else %}{% url 'gestionnaire_dashboard' %}{% endif %}">Retour</a>
     </div>
   </div>
 
-  <div class="col-lg-5">
-    <h2 class="h5">Historique</h2>
-    <ul class="timeline list-unstyled">
-      <li><strong>{{ signalement.cree_le|date:"d/m/Y H:i" }}</strong> — Signalement créé par {{ signalement.demandeur.username }}</li>
-      {% for h in historique %}
+  <aside>
+    <section class="side-block" aria-labelledby="titre-historique">
+      <h2 class="side-title" id="titre-historique">Historique <span>{{ historique|length }} changement{{ historique|length|pluralize }}</span></h2>
+      <ul class="timeline">
         <li>
-          <strong>{{ h.date|date:"d/m/Y H:i" }}</strong> —
-          {{ h.get_ancien_statut_display }} → {{ h.get_nouveau_statut_display }}
-          par {{ h.par.username|default:"(utilisateur supprimé)" }}
-          {% if h.commentaire %}<div class="small text-muted">{{ h.commentaire|linebreaksbr }}</div>{% endif %}
+          <strong>{{ signalement.cree_le|date:"d/m/Y · H:i" }}</strong>
+          Signalement créé par {{ signalement.demandeur.username }}
         </li>
-      {% endfor %}
-    </ul>
-    <h2 class="h5 mt-4">Discussion</h2>
-    {% for message in discussion %}
-      <div class="border rounded p-2 mb-2">
-        <strong>{{ message.auteur.username }}</strong>
-        <small class="text-muted">{{ message.date|date:"d/m/Y H:i" }}</small>
-        <div>{{ message.contenu|linebreaksbr }}</div>
+        {% for h in historique %}
+          <li>
+            <strong>{{ h.date|date:"d/m/Y · H:i" }}</strong>
+            {{ h.get_ancien_statut_display }} → {{ h.get_nouveau_statut_display }}
+            <span class="cell-muted">par {{ h.par.username|default:"(utilisateur supprimé)" }}</span>
+            {% if h.commentaire %}<p>{{ h.commentaire|linebreaksbr }}</p>{% endif %}
+          </li>
+        {% endfor %}
+      </ul>
+    </section>
+
+    <section class="side-block" aria-labelledby="titre-discussion">
+      <h2 class="side-title" id="titre-discussion">Discussion <span>{{ discussion|length }} message{{ discussion|length|pluralize }}</span></h2>
+      <div class="discussion">
+        {% for message in discussion %}
+          <article class="msg">
+            <div class="msg-head">
+              <span class="msg-author">{{ message.auteur.username }}</span>
+              <time class="msg-time" datetime="{{ message.date|date:'c' }}">{{ message.date|date:"d/m/Y · H:i" }}</time>
+            </div>
+            <div class="msg-body">{{ message.contenu|linebreaksbr }}</div>
+          </article>
+        {% empty %}
+          <p class="cell-muted">Aucun message pour le moment.</p>
+        {% endfor %}
       </div>
-    {% empty %}
-      <p class="text-muted">Aucun message.</p>
-    {% endfor %}
-    <form method="post" class="mt-3">
-      {% csrf_token %}
-      {{ message_form.contenu }}
-      <button type="submit" class="btn btn-outline-primary mt-2">Envoyer</button>
-    </form>
-  </div>
+      <form method="post" class="discussion-form">
+        {% csrf_token %}
+        <label class="visually-hidden" for="{{ message_form.contenu.id_for_label }}">Votre message</label>
+        {{ message_form.contenu }}
+        <div class="form-actions">
+          <button type="submit" class="btn btn--primary btn--sm">Envoyer le message</button>
+        </div>
+      </form>
+    </section>
+  </aside>
 </div>
 {% endblock %}

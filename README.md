@@ -1,7 +1,7 @@
 # Suivi des demandes d'intervention (Django)
 
 Projet M1 GL — Université de Vakinankaratra — Thème 2.
-Stack : Python 3.11+, Django 5.x, SQLite, Bootstrap 5 (CDN, style uniquement). Aucun service externe.
+Stack : Python 3.11+, Django 5.x, SQLite, interface HTML/CSS pure (aucun framework ni JavaScript). Aucun service externe requis pour l’interface.
 
 ## Installation et lancement
 
@@ -93,3 +93,5 @@ gestion_interventions/
   static/css/app.css
 ```
 `fixtures/` est vide : les données de démo sont produites par `seed_demo` (reproductible, sans mot de passe en clair).
+
+`static/css/app.css` regroupe les jetons de design, la mise en page responsive et les animations CSS (entrées de page, cascades, survols) ; elles sont neutralisées par `prefers-reduced-motion: reduce`.

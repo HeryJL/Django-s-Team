@@ -1,23 +1,30 @@
 {% extends "base.html" %}
 {% block title %}Annonces{% endblock %}
 {% block content %}
-<div class="d-flex justify-content-between align-items-end mb-4">
-  <div><p class="eyebrow mb-1"><i class="bi bi-broadcast me-2"></i>Communication</p><h1 class="page-title mb-0">Annonces</h1></div>
+<div class="page-head">
+  <div>
+    <p class="kicker">Communication</p>
+    <h1 class="page-title">Annonces</h1>
+    <p class="page-sub">Les informations publiées par les gestionnaires pour l’ensemble des utilisateurs.</p>
+  </div>
   {% if est_gestionnaire %}
-    <a class="btn btn-primary" href="{% url 'annonce_create' %}"><i class="bi bi-plus-lg me-2"></i>Faire une annonce</a>
+    <div class="page-head-actions">
+      <a class="btn btn--primary" href="{% url 'annonce_create' %}"><svg class="icon" aria-hidden="true"><use href="#i-plus-lg"></use></svg>Faire une annonce</a>
+    </div>
   {% endif %}
 </div>
+
 {% for annonce in annonces %}
-  <article class="card announcement-card mb-3">
-    <div class="card-body">
-      <h2 class="h5 fw-bold"><i class="bi bi-megaphone me-2 text-warning"></i>{{ annonce.titre }}</h2>
-      <p class="card-text">{{ annonce.contenu|linebreaksbr }}</p>
-      <p class="card-text announcement-meta"><i class="bi bi-clock me-1"></i>
-        Publiée le {{ annonce.publie_le|date:"d/m/Y à H:i" }} par {{ annonce.auteur.username }}
-      </p>
-    </div>
+  <article class="notice">
+    <h2>{{ annonce.titre }}</h2>
+    <div class="notice-body">{{ annonce.contenu|linebreaksbr }}</div>
+    <p class="notice-meta">Publiée le {{ annonce.publie_le|date:"d/m/Y à H:i" }} par {{ annonce.auteur.username }}</p>
   </article>
 {% empty %}
-  <div class="alert alert-info">Aucune annonce pour le moment.</div>
+  <div class="empty-state">
+    <span class="empty-icon" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-megaphone"></use></svg></span>
+    <h2>Aucune annonce pour le moment</h2>
+    <p>Les informations publiées par les gestionnaires apparaîtront ici.</p>
+  </div>
 {% endfor %}
 {% endblock %}

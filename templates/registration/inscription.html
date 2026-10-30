@@ -1,12 +1,29 @@
 {% extends "base.html" %}
 {% block title %}Inscription{% endblock %}
 {% block content %}
-<div class="row justify-content-center"><div class="col-md-6">
-  <h1 class="h3 mb-3">Créer un compte</h1>
-  <form method="post" class="card card-body">
-    {% csrf_token %}
-    {% include "interventions/_form_fields.html" %}
-    <button type="submit" class="btn btn-primary">Créer mon compte</button>
-  </form>
-</div></div>
+<div class="auth">
+  <aside class="auth-aside">
+    <p class="kicker">INTER-V</p>
+    <h2>Votre interlocuteur, du premier signalement à la clôture.</h2>
+    <p>Un compte suffit pour déposer une demande, échanger sur son avancement et valider sa résolution.</p>
+    <ul class="auth-points">
+      <li><svg class="icon" aria-hidden="true"><use href="#i-check2"></use></svg>Historique complet de vos demandes</li>
+      <li><svg class="icon" aria-hidden="true"><use href="#i-check2"></use></svg>Échanges centralisés avec le gestionnaire</li>
+      <li><svg class="icon" aria-hidden="true"><use href="#i-check2"></use></svg>Validation finale par le demandeur</li>
+    </ul>
+  </aside>
+
+  <section class="auth-panel">
+    <h1>Créer un compte</h1>
+    <p class="auth-lead">Quelques informations et votre espace est prêt.</p>
+    <form method="post">
+      {% csrf_token %}
+      {% include "interventions/_form_fields.html" %}
+      <div class="form-actions">
+        <button type="submit" class="btn btn--primary btn--block">Créer mon compte</button>
+      </div>
+    </form>
+    <p class="auth-alt">Vous avez déjà un compte ? <a href="{% url 'login' %}">Se connecter</a></p>
+  </section>
+</div>
 {% endblock %}
