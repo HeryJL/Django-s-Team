@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Faire une annonce{% endblock %}
+{% block content %}
+<h1 class="h3 mb-3">Faire une annonce</h1>
+<form method="post" class="card card-body">
+  {% csrf_token %}
+  {% include "interventions/_form_fields.html" %}
+  <div><button class="btn btn-primary" type="submit">Publier l'annonce</button>
+    <a class="btn btn-outline-secondary" href="{% url 'annonces' %}">Annuler</a></div>
+</form>
+{% endblock %}

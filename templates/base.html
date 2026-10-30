@@ -16,13 +16,13 @@
     </button>
     <div class="collapse navbar-collapse" id="menu">
       <ul class="navbar-nav me-auto">
-        <li class="nav-item"><a class="nav-link" href="{% url 'categorie_list' %}">Catégories</a></li>
-        <li class="nav-item"><a class="nav-link" href="{% url 'signalement_list' %}">Demandes</a></li>
+        <li class="nav-item"><a class="nav-link" href="{% url 'annonces' %}">Annonces</a></li>
         {% if user.is_authenticated %}
-          <li class="nav-item"><a class="nav-link" href="{% url 'signalement_create' %}">Nouveau signalement</a></li>
-          <li class="nav-item"><a class="nav-link" href="{% url 'mes_signalements' %}">Mes signalements</a></li>
           {% if est_gestionnaire %}
-            <li class="nav-item"><a class="nav-link" href="{% url 'gestionnaire_dashboard' %}">Tableau de bord</a></li>
+            <li class="nav-item"><a class="nav-link" href="{% url 'gestionnaire_dashboard' %}">Demandes à traiter</a></li>
+            <li class="nav-item"><a class="nav-link" href="{% url 'annonce_create' %}">Faire une annonce</a></li>
+          {% else %}
+            <li class="nav-item"><a class="nav-link" href="{% url 'mes_signalements' %}">Mes signalements</a></li>
           {% endif %}
         {% endif %}
       </ul>

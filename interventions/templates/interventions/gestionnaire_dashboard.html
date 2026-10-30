@@ -64,4 +64,35 @@
     </tbody>
   </table>
 </div>
+
+<h2 class="h5 mt-4">En attente des validations ({{ en_attente_validation|length }})</h2>
+<div class="table-responsive mb-4">
+  <table class="table table-striped align-middle bg-white">
+    <thead><tr><th>Titre</th><th>Demandeur</th><th>Validation demandeur</th><th>Validation gestionnaire</th></tr></thead>
+    <tbody>
+    {% for s in en_attente_validation %}
+      <tr>
+        <td><a href="{% url 'signalement_detail' s.pk %}">{{ s.titre }}</a></td>
+        <td>{{ s.demandeur.username }}</td>
+        <td>{% if s.validation_demandeur %}Validée{% else %}En attente{% endif %}</td>
+        <td>{% if s.validation_gestionnaire %}Validée{% else %}En attente{% endif %}</td>
+      </tr>
+    {% empty %}<tr><td colspan="4" class="text-muted">Aucune demande en attente.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<h2 class="h5 mt-4">Historique des tickets fermés ou retirés</h2>
+<div class="table-responsive">
+  <table class="table table-striped align-middle bg-white">
+    <thead><tr><th>Titre</th><th>Demandeur</th><th>État</th><th>Date</th></tr></thead>
+    <tbody>
+    {% for s in historique %}
+      <tr><td><a href="{% url 'signalement_detail' s.pk %}">{{ s.titre }}</a></td>
+        <td>{{ s.demandeur.username }}</td><td><span class="badge {{ s.badge_statut }}">{{ s.get_statut_display }}</span></td>
+        <td>{{ s.maj_le|date:"d/m/Y H:i" }}</td></tr>
+    {% empty %}<tr><td colspan="4" class="text-muted">Aucun ticket historique.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
 {% endblock %}

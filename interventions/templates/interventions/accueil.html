@@ -11,12 +11,14 @@
     <a class="btn btn-outline-secondary" href="{% url 'inscription' %}">Créer un compte</a>
   {% endif %}
 </div>
-<h2 class="h5">Catégories de problèmes</h2>
+<h2 class="h5">Problèmes en cours par catégorie</h2>
 <div class="row g-3">
   {% for c in categories %}
     <div class="col-md-4"><div class="card h-100"><div class="card-body">
       <h3 class="h6 card-title">{{ c.nom }}</h3>
       <p class="card-text text-muted small">{{ c.description|default:"—" }}</p>
+      <p class="mb-0"><span class="badge text-bg-warning">{{ c.nb_en_cours }}</span>
+        signalement{{ c.nb_en_cours|pluralize }} en cours</p>
     </div></div></div>
   {% empty %}
     <p class="text-muted">Aucune catégorie pour le moment.</p>

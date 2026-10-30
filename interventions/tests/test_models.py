@@ -46,7 +46,7 @@ class TransitionsTests(TestCase):
         self.s.changer_statut(Statut.EN_COURS, self.manu)
         for vide in ("", "   "):
             with self.assertRaises(ValidationError):
-                self.s.changer_statut(Statut.RESOLUE, self.manu, vide)
+                self.s.changer_statut(Statut.ATTENTE_VALIDATION, self.manu, vide)
         self.s.refresh_from_db()
         self.assertEqual(self.s.statut, Statut.EN_COURS)
 
@@ -68,14 +68,29 @@ class TransitionsTests(TestCase):
 
     def test_historique_cree_a_chaque_transition(self):
         self.s.changer_statut(Statut.EN_COURS, self.manu)
-        self.s.changer_statut(Statut.RESOLUE, self.manu, "Ampoule remplacée")
+        self.s.changer_statut(Statut.ATTENTE_VALIDATION, self.manu, "Ampoule remplacée")
+        self.s.valider_fermeture(self.alice)
+        self.s.valider_fermeture(self.manu)
         lignes = list(HistoriqueStatut.objects.filter(signalement=self.s))
-        self.assertEqual(len(lignes), 2)
+        self.assertEqual(len(lignes), 3)
         self.assertEqual((lignes[0].ancien_statut, lignes[0].nouveau_statut),
                          (Statut.NOUVELLE, Statut.EN_COURS))
         self.assertEqual((lignes[1].ancien_statut, lignes[1].nouveau_statut),
-                         (Statut.EN_COURS, Statut.RESOLUE))
+                         (Statut.EN_COURS, Statut.ATTENTE_VALIDATION))
         self.assertEqual(lignes[1].commentaire, "Ampoule remplacée")
+        self.assertEqual((lignes[2].ancien_statut, lignes[2].nouveau_statut),
+                         (Statut.ATTENTE_VALIDATION, Statut.RESOLUE))
+
+    def test_fermeture_exige_les_deux_validations(self):
+        self.s.changer_statut(Statut.EN_COURS, self.manu)
+        self.s.changer_statut(Statut.ATTENTE_VALIDATION, self.manu, "Travaux terminés")
+        self.s.valider_fermeture(self.alice)
+        self.s.refresh_from_db()
+        self.assertEqual(self.s.statut, Statut.ATTENTE_VALIDATION)
+        self.assertTrue(self.s.validation_demandeur)
+        self.s.valider_fermeture(self.manu)
+        self.s.refresh_from_db()
+        self.assertEqual(self.s.statut, Statut.RESOLUE)
 
     def test_transition_refusee_n_ecrit_pas_d_historique(self):
         with self.assertRaises(ValidationError):

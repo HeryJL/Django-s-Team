@@ -10,7 +10,7 @@ python -m venv .venv
 source .venv/bin/activate        # Windows : .venv\Scripts\activate
 pip install -r requirements.txt
 python manage.py migrate          # crée db.sqlite3 + le groupe « Gestionnaires »
-python manage.py seed_demo        # gestionnaire, 2 demandeurs, 3 catégories, 5 signalements
+python manage.py seed_demo        # gestionnaire, 2 demandeurs, 8 catégories, 5 signalements
 python manage.py runserver
 ```
 
@@ -58,14 +58,16 @@ Pour la production : définir `DJANGO_SECRET_KEY`, `DJANGO_DEBUG=0`, `DJANGO_ALL
 | URL | Nom | Accès |
 |---|---|---|
 | `/` | accueil | public |
-| `/categories/` | categorie_list | public |
-| `/signalements/` | signalement_list | public (sans description/demandeur ; retirées masquées) |
+| `/annonces/` | annonces | public |
+| `/annonces/nouveau/` | annonce_create | gestionnaire |
 | `/signalements/nouveau/` | signalement_create | connecté |
 | `/signalements/<id>/` | signalement_detail | auteur ou gestionnaire |
 | `/signalements/<id>/retirer/` | signalement_retirer | auteur, statut « nouvelle » (GET = confirmation, POST = action) |
 | `/signalements/<id>/prendre-en-charge/` | signalement_prendre_en_charge | gestionnaire, POST |
-| `/signalements/<id>/resoudre/` | signalement_resoudre | gestionnaire (GET = formulaire, POST = action) |
-| `/mes-signalements/` | mes_signalements | connecté |
+| `/signalements/<id>/resoudre/` | signalement_resoudre | gestionnaire, propose la fin du traitement (GET = formulaire, POST = action) |
+| `/signalements/<id>/valider-fermeture/` | signalement_valider_fermeture | demandeur ou gestionnaire assigné, POST |
+| `/signalements/<id>/refuser-fermeture/` | signalement_refuser_fermeture | demandeur ou gestionnaire assigné, POST avec motif |
+| `/mes-signalements/` | mes_signalements | demandeur connecté |
 | `/gestion/` | gestionnaire_dashboard | gestionnaire |
 | `/admin/` | — | staff/superuser |
 
@@ -73,10 +75,11 @@ Pour la production : définir `DJANGO_SECRET_KEY`, `DJANGO_DEBUG=0`, `DJANGO_ALL
 
 Lancer `seed_demo` puis `runserver`, fenêtre ~1280 px de large.
 
-1. **Liste** : connecté en `alice`, `/signalements/`, saisir « projecteur » dans la recherche (ou choisir un état) → capturer le tableau filtré.
+1. **Accueil et catégories** : ouvrir `/` pour montrer les catégories et le nombre de demandes « en cours » par catégorie.
 2. **Formulaire** : `/signalements/nouveau/`, laisser le titre vide et envoyer → capturer le message d'erreur ; (option : seconde capture du formulaire rempli).
 3. **Espace utilisateur** : `/mes-signalements/` en `alice` → capturer la liste avec dates, priorités, états ; puis ouvrir un signalement résolu pour montrer l'historique.
-4. **Traitement gestionnaire** : se connecter en `gestionnaire`, `/gestion/` (tri par priorité), cliquer « Prendre en charge », puis « Résoudre » sur une demande en cours → capturer la page de résolution et le message de succès.
+4. **Traitement et validation** : le gestionnaire prend en charge puis propose la fin du traitement ; le demandeur et le gestionnaire valident chacun la fermeture pour passer à « résolue ».
+5. **Annonces** : se connecter en `gestionnaire`, ouvrir `/annonces/nouveau/`, publier une annonce, puis ouvrir `/annonces/` avec `alice` pour montrer sa visibilité.
 
 ## Structure
 

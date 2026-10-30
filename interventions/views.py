@@ -9,8 +9,10 @@ from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_http_methods, require_POST
 
-from .forms import InscriptionForm, ResolutionForm, SignalementForm
-from .models import Categorie, Signalement, Statut
+from .forms import (
+    AnnonceForm, InscriptionForm, MessageSignalementForm, ResolutionForm, SignalementForm,
+)
+from .models import Annonce, Categorie, Signalement, Statut
 from .roles import est_gestionnaire, gestionnaire_required
 
 PAR_PAGE = 10
@@ -50,29 +52,32 @@ def _changer_statut(request, signalement, nouveau, commentaire, message_ok):
 
 # --- Pages publiques -------------------------------------------------------
 def accueil(request):
-    categories = Categorie.objects.filter(actif=True)
+    categories = Categorie.objects.filter(actif=True).annotate(
+        nb_en_cours=Count("signalements", filter=Q(signalements__statut=Statut.EN_COURS))
+    )
     return render(request, "interventions/accueil.html", {"categories": categories})
 
 
-def categorie_list(request):
-    categories = Categorie.objects.filter(actif=True).annotate(
-        nb_signalements=Count("signalements", filter=~Q(signalements__statut=Statut.RETIREE))
-    )
-    return render(request, "interventions/categorie_list.html", {"categories": categories})
+def annonces(request):
+    return render(request, "interventions/annonces.html", {
+        "annonces": Annonce.objects.select_related("auteur"),
+    })
 
 
-def signalement_list(request):
-    """Liste publique (sans description ni demandeur). Les retirées ne sont visibles
-    que des gestionnaires. Le détail reste réservé à l'auteur et aux gestionnaires."""
-    gestionnaire = est_gestionnaire(request.user)
-    queryset = Signalement.objects.select_related("categorie")
-    statuts = Statut.choices
-    if not gestionnaire:
-        queryset = queryset.exclude(statut=Statut.RETIREE)
-        statuts = [c for c in Statut.choices if c[0] != Statut.RETIREE]
-    contexte = _contexte_liste(request, queryset, statuts)
-    contexte["titre_page"] = "Toutes les demandes"
-    return render(request, "interventions/signalement_list.html", contexte)
+@gestionnaire_required
+def annonce_create(request):
+    if request.method == "POST":
+        form = AnnonceForm(request.POST)
+        if form.is_valid():
+            annonce = form.save(commit=False)
+            annonce.auteur = request.user
+            annonce.save()
+            messages.success(request, "L'annonce a été publiée.")
+            return redirect("annonces")
+        messages.error(request, "Le formulaire contient des erreurs.")
+    else:
+        form = AnnonceForm()
+    return render(request, "interventions/annonce_form.html", {"form": form})
 
 
 def inscription(request):
@@ -94,12 +99,16 @@ def inscription(request):
 # --- Espace utilisateur ----------------------------------------------------
 @login_required
 def mes_signalements(request):
+    if est_gestionnaire(request.user):
+        return redirect("gestionnaire_dashboard")
     queryset = Signalement.objects.filter(demandeur=request.user).select_related("categorie")
     return render(request, "interventions/mes_signalements.html", _contexte_liste(request, queryset))
 
 
 @login_required
 def signalement_create(request):
+    if est_gestionnaire(request.user):
+        return redirect("gestionnaire_dashboard")
     if request.method == "POST":
         form = SignalementForm(request.POST)
         if form.is_valid():
@@ -122,6 +131,17 @@ def signalement_detail(request, pk):
     est_auteur = signalement.demandeur_id == request.user.id
     if not est_auteur and not est_gestionnaire(request.user):
         raise PermissionDenied("Ce signalement ne vous appartient pas.")
+    if request.method == "POST":
+        form = MessageSignalementForm(request.POST)
+        if form.is_valid():
+            message = form.save(commit=False)
+            message.signalement = signalement
+            message.auteur = request.user
+            message.save()
+            messages.success(request, "Votre message a été ajouté à la discussion.")
+            return redirect("signalement_detail", pk=pk)
+    else:
+        form = MessageSignalementForm()
     return render(
         request,
         "interventions/signalement_detail.html",
@@ -129,6 +149,8 @@ def signalement_detail(request, pk):
             "signalement": signalement,
             "historique": signalement.historiques.select_related("par"),
             "est_auteur": est_auteur,
+            "discussion": signalement.messages_discussion.select_related("auteur"),
+            "message_form": form,
         },
     )
 
@@ -173,7 +195,7 @@ def signalement_resoudre(request, pk):
     if request.method == "POST":
         form = ResolutionForm(request.POST)
         if form.is_valid():
-            if _changer_statut(request, signalement, Statut.RESOLUE,
+            if _changer_statut(request, signalement, Statut.ATTENTE_VALIDATION,
                                form.cleaned_data["commentaire"], "La demande a été marquée résolue."):
                 return redirect("gestionnaire_dashboard")
             return redirect("signalement_detail", pk=signalement.pk)
@@ -184,12 +206,42 @@ def signalement_resoudre(request, pk):
                   {"signalement": signalement, "form": form})
 
 
+@login_required
+@require_POST
+def signalement_valider_fermeture(request, pk):
+    signalement = get_object_or_404(Signalement, pk=pk)
+    try:
+        signalement.valider_fermeture(request.user)
+    except ValidationError as exc:
+        messages.error(request, " ".join(exc.messages))
+    else:
+        messages.success(request, "Votre validation de fermeture a été enregistrée.")
+    return redirect("signalement_detail", pk=pk)
+
+
+@login_required
+@require_POST
+def signalement_refuser_fermeture(request, pk):
+    signalement = get_object_or_404(Signalement, pk=pk)
+    try:
+        signalement.refuser_fermeture(request.user, request.POST.get("commentaire"))
+    except ValidationError as exc:
+        messages.error(request, " ".join(exc.messages))
+    else:
+        messages.info(request, "La demande est repassée en cours.")
+    return redirect("signalement_detail", pk=pk)
+
+
 @gestionnaire_required
 def gestionnaire_dashboard(request):
     base = Signalement.objects.select_related("categorie", "demandeur", "gestionnaire")
     contexte = {
         "nouvelles": base.filter(statut=Statut.NOUVELLE).par_priorite(),
         "en_cours": base.filter(statut=Statut.EN_COURS).par_priorite(),
+        "en_attente_validation": base.filter(
+            statut=Statut.ATTENTE_VALIDATION
+        ).par_priorite(),
+        "historique": base.filter(statut__in=[Statut.RESOLUE, Statut.RETIREE]),
         "stats": {
             "total": Signalement.objects.count(),
             "en_attente": Signalement.objects.filter(statut=Statut.NOUVELLE).count(),

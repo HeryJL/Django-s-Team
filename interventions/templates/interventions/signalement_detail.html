@@ -20,6 +20,12 @@
         {% if signalement.commentaire_resolution %}
           <dt class="col-sm-4">Résolution</dt><dd class="col-sm-8">{{ signalement.commentaire_resolution|linebreaksbr }}</dd>
         {% endif %}
+        {% if signalement.peut_etre_valide %}
+          <dt class="col-sm-4">Validation du demandeur</dt>
+          <dd class="col-sm-8">{% if signalement.validation_demandeur %}Validée{% else %}En attente{% endif %}</dd>
+          <dt class="col-sm-4">Validation du gestionnaire</dt>
+          <dd class="col-sm-8">{% if signalement.validation_gestionnaire %}Validée{% else %}En attente{% endif %}</dd>
+        {% endif %}
       </dl>
     </div></div>
 
@@ -36,6 +42,25 @@
         {% endif %}
         {% if signalement.peut_etre_resolu %}
           <a class="btn btn-success" href="{% url 'signalement_resoudre' signalement.pk %}">Marquer comme résolue</a>
+        {% endif %}
+      {% endif %}
+      {% if signalement.peut_etre_valide %}
+        {% if est_auteur and not signalement.validation_demandeur %}
+          <form method="post" action="{% url 'signalement_valider_fermeture' signalement.pk %}">
+            {% csrf_token %}<button type="submit" class="btn btn-success">Valider la fermeture</button>
+          </form>
+        {% endif %}
+        {% if est_gestionnaire and not signalement.validation_gestionnaire %}
+          <form method="post" action="{% url 'signalement_valider_fermeture' signalement.pk %}">
+            {% csrf_token %}<button type="submit" class="btn btn-success">Valider la fermeture</button>
+          </form>
+        {% endif %}
+        {% if est_auteur or est_gestionnaire %}
+          <form method="post" action="{% url 'signalement_refuser_fermeture' signalement.pk %}" class="d-flex gap-2 mt-2">
+            {% csrf_token %}
+            <input name="commentaire" class="form-control" placeholder="Motif du refus" required>
+            <button type="submit" class="btn btn-outline-danger">Refuser</button>
+          </form>
         {% endif %}
       {% endif %}
       <a class="btn btn-outline-secondary" href="{% if est_auteur %}{% url 'mes_signalements' %}{% else %}{% url 'gestionnaire_dashboard' %}{% endif %}">Retour</a>
@@ -55,6 +80,21 @@
         </li>
       {% endfor %}
     </ul>
+    <h2 class="h5 mt-4">Discussion</h2>
+    {% for message in discussion %}
+      <div class="border rounded p-2 mb-2">
+        <strong>{{ message.auteur.username }}</strong>
+        <small class="text-muted">{{ message.date|date:"d/m/Y H:i" }}</small>
+        <div>{{ message.contenu|linebreaksbr }}</div>
+      </div>
+    {% empty %}
+      <p class="text-muted">Aucun message.</p>
+    {% endfor %}
+    <form method="post" class="mt-3">
+      {% csrf_token %}
+      {{ message_form.contenu }}
+      <button type="submit" class="btn btn-outline-primary mt-2">Envoyer</button>
+    </form>
   </div>
 </div>
 {% endblock %}

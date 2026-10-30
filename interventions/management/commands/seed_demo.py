@@ -8,9 +8,14 @@ from interventions.models import Categorie, Priorite, Signalement, Statut
 from interventions.roles import GROUPE_GESTIONNAIRES
 
 CATEGORIES = [
-    ("Matériel informatique", "Ordinateurs, projecteurs, imprimantes."),
-    ("Locaux & Mobilier", "Salles, chaises, tables, portes, électricité, plomberie."),
-    ("Réseau & Connexion", "Wi-Fi, câblage, accès Internet."),
+    ("Matériel informatique", "Ordinateurs, projecteurs, imprimantes et périphériques."),
+    ("Locaux & Mobilier", "Salles, chaises, tables, portes et fenêtres."),
+    ("Réseau & Connexion", "Wi-Fi, câblage et accès Internet."),
+    ("Électricité", "Prises, éclairage, disjoncteurs et installations électriques."),
+    ("Plomberie", "Fuites, robinets, lavabos et sanitaires."),
+    ("Climatisation & Ventilation", "Climatiseurs, ventilateurs et qualité de l'air."),
+    ("Sécurité", "Serrures, alarmes, accès et dispositifs de sécurité."),
+    ("Propreté & Déchets", "Nettoyage, collecte et gestion des déchets."),
 ]
 
 DEMO = [
@@ -28,7 +33,7 @@ DEMO = [
 
 
 class Command(BaseCommand):
-    help = ("Crée le groupe Gestionnaires, 1 gestionnaire, 2 demandeurs, 3 catégories et "
+    help = ("Crée le groupe Gestionnaires, 1 gestionnaire, 2 demandeurs, 8 catégories et "
             "5 signalements couvrant tous les statuts. Idempotent. Mots de passe générés "
             "aléatoirement et affichés une seule fois.")
 
@@ -67,7 +72,12 @@ class Command(BaseCommand):
             if cible in (Statut.EN_COURS, Statut.RESOLUE):
                 s.changer_statut(Statut.EN_COURS, gestionnaire)
             if cible == Statut.RESOLUE:
-                s.changer_statut(Statut.RESOLUE, gestionnaire, "Prise remplacée par l'électricien.")
+                s.changer_statut(
+                    Statut.ATTENTE_VALIDATION, gestionnaire,
+                    "Prise remplacée par l'électricien.",
+                )
+                s.valider_fermeture(s.demandeur)
+                s.valider_fermeture(gestionnaire)
             if cible == Statut.RETIREE:
                 s.changer_statut(Statut.RETIREE, s.demandeur, "Doublon, déjà signalé.")
 
