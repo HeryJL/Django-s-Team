@@ -42,6 +42,13 @@
   --shadow: 0 1px 2px rgba(24, 34, 46, .05), 0 18px 40px -28px rgba(24, 34, 46, .45);
   --max: 1160px;
   --ease: cubic-bezier(.2, .6, .2, 1);
+  --ease-out: cubic-bezier(.16, 1, .3, 1);
+  --ease-soft: cubic-bezier(.45, .05, .55, .95);
+
+  /* Durées : retour immédiat, contrôle, entrée de page */
+  --dur-1: .14s;
+  --dur-2: .24s;
+  --dur-3: .42s;
 }
 
 /* 2. Base & structure ------------------------------------------------------ */
@@ -79,14 +86,14 @@ ul, ol { margin: 0; padding: 0; }
 img { max-width: 100%; display: block; }
 
 a {
-  color: var(--blue);
+  color: var(--paper);
   text-decoration-thickness: 1px;
   text-underline-offset: 3px;
 }
-a:hover { color: var(--blue-dark); }
+a:hover { color: var(--paper); }
 
 :focus-visible {
-  outline: 2px solid var(--blue);
+  outline: 2px solid var(--paper);
   outline-offset: 3px;
   border-radius: 4px;
 }
@@ -1307,6 +1314,204 @@ select.form-select {
 .error-page h1 { font-size: clamp(1.5rem, 3vw, 2.1rem); margin: .6rem 0 .5rem; }
 .error-page p { color: var(--muted); max-width: 42ch; margin-bottom: 1.6rem; font-size: .92rem; }
 
+/* 11. Mouvement ------------------------------------------------------------ */
+/* Personnalité « premium / corporate » : une seule courbe de décelération,
+   trois durées, des entrées courtes et une couche d'ambiance discrète.
+   Le mouvement sert la lecture et le repérage ; il ne retarde jamais une
+   action et se réduit à néant avec prefers-reduced-motion (fin de fichier). */
+
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes rise-in-sm {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes drop-in {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(.96); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes slide-in-left {
+  from { opacity: 0; transform: translateX(-14px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes slide-in-right {
+  from { opacity: 0; transform: translateX(14px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes line-grow {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+@keyframes dot-pop {
+  0%   { opacity: 0; transform: scale(.2); }
+  65%  { opacity: 1; transform: scale(1.15); }
+  100% { opacity: 1; transform: scale(1); }
+}
+@keyframes cat-settle {
+  from { transform: translateY(7px); }
+  to   { transform: translateY(0); }
+}
+@keyframes halo {
+  0%        { opacity: .5; transform: scale(.9); }
+  70%, 100% { opacity: 0; transform: scale(2.4); }
+}
+@keyframes ambient-drift {
+  from { transform: translate3d(-2%, 0, 0) scale(1); }
+  to   { transform: translate3d(2%, -1.5%, 0) scale(1.06); }
+}
+
+/* Entrée de page : les blocs racine montent de 12 px en cascade courte.
+   `backwards` (et non `forwards`) rend la main aux styles de survol une fois
+   l'animation terminée. */
+.site-main > .wrap > * {
+  animation: rise-in var(--dur-3) var(--ease-out) backwards;
+}
+.site-main > .wrap > *:nth-child(2) { animation-delay: 60ms; }
+.site-main > .wrap > *:nth-child(3) { animation-delay: 120ms; }
+.site-main > .wrap > *:nth-child(4) { animation-delay: 180ms; }
+.site-main > .wrap > *:nth-child(5) { animation-delay: 240ms; }
+.site-main > .wrap > *:nth-child(n+6) { animation-delay: 300ms; }
+
+/* Les conteneurs à cascade interne ne bougent pas en bloc. */
+.site-main > .wrap > .cat-section,
+.site-main > .wrap > .kpis,
+.site-main > .wrap > .auth,
+.site-main > .wrap > .flash-stack,
+.site-main > .wrap > .error-page { animation: none; }
+
+/* Accueil : titre de section, puis grille en fondu et cartes qui se posent.
+   Le fondu porte sur la grille entière pour que les interstices ne grisent
+   pas les cartes pendant la cascade. */
+.cat-section > .section-head {
+  animation: rise-in var(--dur-3) var(--ease-out) 40ms backwards;
+}
+.cat-grid { animation: rise-in var(--dur-3) var(--ease-out) 90ms backwards; }
+.cat { animation: cat-settle .3s var(--ease-out) backwards; }
+.cat:nth-child(1) { animation-delay: 80ms; }
+.cat:nth-child(2) { animation-delay: 108ms; }
+.cat:nth-child(3) { animation-delay: 136ms; }
+.cat:nth-child(4) { animation-delay: 164ms; }
+.cat:nth-child(5) { animation-delay: 192ms; }
+.cat:nth-child(6) { animation-delay: 220ms; }
+.cat:nth-child(7) { animation-delay: 248ms; }
+.cat:nth-child(n+8) { animation-delay: 276ms; }
+
+/* Tableau de bord : les indicateurs se posent l'un après l'autre. */
+.kpi { animation: rise-in-sm .32s var(--ease-out) backwards; }
+.kpi:nth-child(1) { animation-delay: 60ms; }
+.kpi:nth-child(2) { animation-delay: 115ms; }
+.kpi:nth-child(3) { animation-delay: 170ms; }
+.kpi:nth-child(4) { animation-delay: 225ms; }
+
+/* Connexion / inscription : les deux panneaux se rejoignent. */
+.auth-aside { animation: slide-in-left .46s var(--ease-out) 40ms backwards; }
+.auth-panel { animation: slide-in-right .46s var(--ease-out) 110ms backwards; }
+
+/* Messages flash : arrivée depuis le haut. */
+.flash { animation: drop-in .3s var(--ease-out) backwards; }
+.flash:nth-child(2) { animation-delay: 60ms; }
+.flash:nth-child(3) { animation-delay: 120ms; }
+.flash:nth-child(n+4) { animation-delay: 180ms; }
+
+/* Fiche : les pastilles de l'historique éclosent, la plus récente pulse une
+   fois pour signaler le dernier événement. */
+.timeline li::before { animation: dot-pop .3s var(--ease-out) backwards; }
+.timeline li:nth-child(1)::before { animation-delay: 180ms; }
+.timeline li:nth-child(2)::before { animation-delay: 220ms; }
+.timeline li:nth-child(3)::before { animation-delay: 260ms; }
+.timeline li:nth-child(4)::before { animation-delay: 300ms; }
+.timeline li:nth-child(5)::before { animation-delay: 340ms; }
+.timeline li:nth-child(n+6)::before { animation-delay: 380ms; }
+.timeline li:first-child::after {
+  content: "";
+  position: absolute;
+  left: -1.35rem;
+  top: .3rem;
+  width: .6rem;
+  height: .6rem;
+  border: 1.5px solid var(--gold);
+  border-radius: 50%;
+  pointer-events: none;
+  animation: halo 1.6s var(--ease-out) 1s 1 backwards;
+}
+
+/* Discussion : les messages se lisent dans l'ordre d'arrivée. */
+.msg { animation: rise-in-sm .3s var(--ease-out) backwards; }
+.msg:nth-child(2) { animation-delay: 50ms; }
+.msg:nth-child(3) { animation-delay: 100ms; }
+.msg:nth-child(4) { animation-delay: 150ms; }
+.msg:nth-child(n+5) { animation-delay: 200ms; }
+
+/* Erreur : le code s'installe, puis le texte. */
+.error-code { animation: scale-in .5s var(--ease-out) 30ms backwards; }
+.error-page h1 { animation: rise-in .4s var(--ease-out) 150ms backwards; }
+.error-page p { animation: rise-in .4s var(--ease-out) 210ms backwards; }
+.error-page .btn { animation: rise-in .4s var(--ease-out) 270ms backwards; }
+
+.empty-icon { animation: scale-in .42s var(--ease-out) 220ms backwards; }
+
+/* Repères graphiques : les filets se déploient depuis la gauche. */
+.kicker::before,
+.notice::before,
+.footer-rule {
+  transform-origin: left center;
+}
+.kicker::before { animation: line-grow .45s var(--ease-out) 160ms backwards; }
+.notice::before { animation: line-grow .5s var(--ease-out) 300ms backwards; }
+.footer-rule { animation: line-grow .5s var(--ease-out) 100ms backwards; }
+.nav-link.is-active::after {
+  transform-origin: center;
+  animation: line-grow .42s var(--ease-out) 120ms backwards;
+}
+.brand-mark { animation: scale-in .4s var(--ease-out) 60ms backwards; }
+
+/* Micro-retours : icônes de catégorie et liens de liste. */
+.cat-icon {
+  transition: color var(--dur-2) var(--ease), background-color var(--dur-2) var(--ease),
+              border-color var(--dur-2) var(--ease), transform var(--dur-2) var(--ease-out);
+}
+.cat:hover .cat-icon {
+  color: var(--gold-ink);
+  background: var(--gold-tint);
+  border-color: #e3cf9f;
+  transform: translateY(-2px);
+}
+.data-table td a {
+  transition: color var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease);
+}
+.pager-link,
+.toolbar-reset {
+  transition: border-color var(--dur-1) var(--ease), background-color var(--dur-1) var(--ease),
+              color var(--dur-1) var(--ease);
+}
+.pager-link:hover { background: #fbf8f1; }
+
+/* Ambiance : halo très lent derrière le hero, seule couche continue du site. */
+.hero {
+  position: relative;
+  isolation: isolate;
+}
+.hero::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  left: -6%;
+  right: -6%;
+  top: -3rem;
+  height: 24rem;
+  background:
+    radial-gradient(38% 58% at 24% 36%, rgba(27, 91, 207, .075), transparent 72%),
+    radial-gradient(34% 52% at 76% 26%, rgba(169, 123, 34, .1), transparent 74%);
+  pointer-events: none;
+  animation: ambient-drift 22s var(--ease-soft) infinite alternate;
+}
+
 /* Adaptations ------------------------------------------------------------- */
 @media (max-width: 1024px) {
   .hero { grid-template-columns: 1fr; gap: 2.2rem; padding-top: .6rem; }
@@ -1328,7 +1533,7 @@ select.form-select {
     padding-top: .7rem;
     border-top: 1px solid rgba(255, 255, 255, .1);
   }
-  .nav-toggle:checked ~ .site-nav { display: flex; }
+  .nav-toggle:checked ~ .site-nav { display: flex; animation: drop-in var(--dur-2) var(--ease-out); }
   .nav-links { flex-direction: column; align-items: stretch; gap: .15rem; }
   .nav-link { padding: .7rem .5rem; font-size: .9rem; min-height: 2.75rem; display: flex; align-items: center; }
   .nav-link.is-active::after { display: none; }
@@ -1436,10 +1641,13 @@ select.form-select {
   *::before,
   *::after {
     animation-duration: .01ms !important;
+    animation-delay: 0s !important;
     animation-iteration-count: 1 !important;
     transition-duration: .01ms !important;
     scroll-behavior: auto !important;
   }
+  .hero::before { animation: none !important; }
+  .timeline li:first-child::after { display: none; }
 }
 
 @media (forced-colors: active) {

@@ -93,3 +93,5 @@ gestion_interventions/
   static/css/app.css
 ```
 `fixtures/` est vide : les données de démo sont produites par `seed_demo` (reproductible, sans mot de passe en clair).
+
+`static/css/app.css` regroupe les jetons de design, la mise en page responsive et les animations CSS (entrées de page, cascades, survols) ; elles sont neutralisées par `prefers-reduced-motion: reduce`.
