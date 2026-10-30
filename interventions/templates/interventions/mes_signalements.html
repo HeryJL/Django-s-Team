@@ -2,8 +2,8 @@
 {% block title %}Mes signalements{% endblock %}
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-3">
-  <h1 class="h3 mb-0">Mes signalements</h1>
-  <a class="btn btn-primary" href="{% url 'signalement_create' %}">Nouveau signalement</a>
+  <div><p class="eyebrow mb-1">Espace personnel</p><h1 class="page-title mb-0">Mes signalements</h1></div>
+  <a class="btn btn-primary" href="{% url 'signalement_create' %}"><i class="bi bi-plus-lg me-2"></i>Nouveau signalement</a>
 </div>
 {% include "interventions/_filtres.html" %}
 {% include "interventions/_signalements_table.html" with lien_detail_toujours=True %}

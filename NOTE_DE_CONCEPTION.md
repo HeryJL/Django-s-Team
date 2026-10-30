@@ -13,12 +13,12 @@ et de suivi, de la demande jusqu'à sa résolution. Le **demandeur** dépose et 
 
 | Rôle | Définition | Droits |
 |---|---|---|
-| Visiteur | non connecté | accueil, catégories, liste publique (titre, catégorie, lieu, priorité, état, date), inscription, connexion |
-| Utilisateur | connecté | tout ce qui précède + déposer un signalement, voir **ses** demandes, ouvrir le détail de **ses** demandes, retirer une demande « nouvelle » |
-| Gestionnaire | membre du groupe `Gestionnaires` (ou superuser) | tableau de bord trié par priorité, voir tout détail, prendre en charge, résoudre |
+| Visiteur | non connecté | accueil (catégories et nombre de demandes en cours), annonces, inscription, connexion |
+| Utilisateur | connecté | déposer un signalement, voir **ses** demandes sur `/mes-signalements/`, rechercher et filtrer **ses** demandes, ouvrir leur détail, retirer une demande « nouvelle », lire les annonces |
+| Gestionnaire | membre du groupe `Gestionnaires` (ou superuser) | tableau de bord trié par priorité, voir tout détail, prendre en charge, résoudre, publier une annonce |
 
 Choix : le rôle est un **groupe Django** créé par migration (`0002`), pas un champ sur l'utilisateur. Un utilisateur connecté mais non autorisé reçoit **403** (page `403.html`) ; un visiteur est redirigé vers la connexion.
-La liste publique n'expose ni description ni demandeur ; son lien vers le détail n'apparaît que pour l'auteur et les gestionnaires.
+Il n'existe pas de liste globale `/signalements/` ni de page `/categories/`. L'accueil présente les catégories actives et le nombre de demandes « en cours » pour chacune. Un demandeur consulte ses demandes sur `/mes-signalements/`; le gestionnaire les traite depuis son tableau de bord.
 
 ## 3. Modèle de données
 
@@ -26,16 +26,19 @@ La liste publique n'expose ni description ni demandeur ; son lien vers le détai
 User (auth) 1 ──< Signalement >── 1 Catégorie
 User (auth) 0..1 ──< Signalement   (gestionnaire assigné)
 Signalement 1 ──< HistoriqueStatut >── 0..1 User (auteur du changement)
+Signalement 1 ──< MessageSignalement >── 1 User (auteur du message)
 ```
 
 **Catégorie** : `nom` (unique), `description`, `slug` (généré automatiquement), `actif`.
 
 **Signalement** : `titre`, `description`, `lieu`, `priorite` (basse/moyenne/haute), `statut`
-(nouvelle/en_cours/resolue/retiree), `categorie` (FK, PROTECT), `demandeur` (FK User, `related_name="signalements_demandes"`), `gestionnaire` (FK User, nullable, `related_name="signalements_pris_en_charge"`),
-`commentaire_resolution`, `cree_le`, `maj_le`.
+(nouvelle/en_cours/attente_validation/resolue/retiree), `categorie` (FK, PROTECT), `demandeur` (FK User, `related_name="signalements_demandes"`), `gestionnaire` (FK User, nullable, `related_name="signalements_pris_en_charge"`),
+`commentaire_resolution`, les validations du demandeur et du gestionnaire, `cree_le`, `maj_le`.
 
 **HistoriqueStatut** : `signalement` (FK, `related_name="historiques"`), `ancien_statut`, `nouveau_statut`, `par` (FK User, SET_NULL), `commentaire`, `date`.
 Indispensable pour respecter « sans perdre l'historique du statut » : chaque changement ajoute une ligne, aucune n'est modifiée ni supprimée par l'application.
+
+**MessageSignalement** conserve la discussion privée entre le demandeur et le gestionnaire assigné, avec son auteur et sa date.
 
 Choix : la création d'un signalement n'écrit pas de ligne d'historique (ce n'est pas une transition) ; la date de création est affichée en tête de la chronologie.
 
@@ -44,14 +47,17 @@ Choix : la création d'un signalement n'écrit pas de ligne d'historique (ce n'e
 Diagramme des transitions autorisées :
 
 ```
-nouvelle ──(gestionnaire)──> en_cours ──(gestionnaire + commentaire)──> resolue
+nouvelle ──(gestionnaire)──> en_cours ──(gestionnaire + commentaire)──> attente_validation
+                                                               └──(demandeur + gestionnaire)──> resolue
     └────(demandeur)────> retiree
 ```
 
 | Transition | Qui | Conditions / effets |
 |---|---|---|
 | nouvelle → en_cours | gestionnaire | assigne le gestionnaire au signalement |
-| en_cours → resolue | gestionnaire | commentaire de résolution non vide, enregistré |
+| en_cours → attente_validation | gestionnaire | commentaire de résolution non vide, traitement proposé |
+| attente_validation → resolue | demandeur et gestionnaire assigné | fermeture uniquement après les deux validations |
+| attente_validation → en_cours | demandeur ou gestionnaire | refus motivé, reprise du traitement |
 | nouvelle → retiree | demandeur (auteur) | uniquement tant que la demande est « nouvelle » |
 | tout le reste | — | refusé : `resolue` et `retiree` sont finaux ; `en_cours → retiree` est interdit ; `nouvelle → resolue` est interdit |
 
@@ -72,14 +78,16 @@ Dans l'admin, `statut`, `gestionnaire` et `commentaire_resolution` sont en lectu
 ## 6. Interface
 
 `base.html` (Bootstrap 5 par CDN, style uniquement) avec navbar conditionnelle visiteur / utilisateur / gestionnaire et bloc de messages
-succès/erreur/avertissement. Pages : accueil, catégories, liste (recherche par titre, filtre par état, pagination de 10), détail avec
-chronologie de l'historique (badges de statut : nouvelle bleu, en cours jaune, résolue vert, retirée gris), formulaire de création, confirmation de retrait, formulaire de résolution, tableau de bord (cartes de statistiques : total, en attente, en cours, résolues ; puis nouvelles et en cours,
-triées par priorité haute → basse puis date), connexion, inscription.
+succès/erreur/avertissement. Pages : accueil avec les catégories et le nombre de demandes en cours, annonces, espace
+« mes signalements » (recherche par titre, filtre par état, pagination de 10), détail avec chronologie de l'historique
+(badges de statut : nouvelle bleu, en cours jaune, attente de validation bleu clair, résolue vert, retirée gris), formulaire de création, confirmation de
+retrait, formulaire de résolution, tableau de bord (cartes de statistiques : total, en attente, en cours, résolues ; puis
+nouvelles et en cours, triées par priorité haute → basse puis date), formulaire « faire une annonce », connexion, inscription.
 
 ## 7. Tests (`python manage.py test`)
 
 - Validation : titre requis (modèle et formulaire), titre trop court, priorité invalide, catégorie inactive refusée, commentaire de résolution requis.
-- Règles métier : `retiree → resolue`, `nouvelle → resolue`, `en_cours → retiree` refusés ; résolution sans commentaire refusée ; seul le demandeur retire ; historique écrit à chaque transition (et pas en cas de refus).
+- Règles métier : `retiree → resolue`, `nouvelle → resolue`, `en_cours → retiree` refusés ; fermeture sans double validation refusée ; seul le demandeur retire ; discussion réservée aux parties ; historique écrit à chaque transition.
 - Accès : non-gestionnaire → 403 sur prise en charge ; retrait du signalement d'autrui → 403 ; détail d'autrui → 403 ; visiteur redirigé ; CSRF exigé ; GET sans effet.
 - Listes : pagination, recherche, filtre, isolation entre utilisateurs, tri par priorité.
 

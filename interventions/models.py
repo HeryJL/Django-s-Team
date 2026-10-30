@@ -11,6 +11,7 @@ from .roles import est_gestionnaire
 class Statut(models.TextChoices):
     NOUVELLE = "nouvelle", "Nouvelle"
     EN_COURS = "en_cours", "En cours"
+    ATTENTE_VALIDATION = "attente_validation", "En attente de validation"
     RESOLUE = "resolue", "Résolue"
     RETIREE = "retiree", "Retirée"
 
@@ -24,7 +25,8 @@ class Priorite(models.TextChoices):
 # Seules transitions possibles. retiree et resolue sont des états finaux.
 TRANSITIONS_AUTORISEES = {
     Statut.NOUVELLE.value: {Statut.EN_COURS.value, Statut.RETIREE.value},
-    Statut.EN_COURS.value: {Statut.RESOLUE.value},
+    Statut.EN_COURS.value: {Statut.ATTENTE_VALIDATION.value},
+    Statut.ATTENTE_VALIDATION.value: {Statut.EN_COURS.value, Statut.RESOLUE.value},
     Statut.RESOLUE.value: set(),
     Statut.RETIREE.value: set(),
 }
@@ -33,6 +35,7 @@ TRANSITIONS_AUTORISEES = {
 BADGES_STATUT = {
     Statut.NOUVELLE.value: "bg-primary",
     Statut.EN_COURS.value: "bg-warning text-dark",
+    Statut.ATTENTE_VALIDATION.value: "bg-info text-dark",
     Statut.RESOLUE.value: "bg-success",
     Statut.RETIREE.value: "bg-secondary",
 }
@@ -68,6 +71,26 @@ class Categorie(models.Model):
         super().save(*args, **kwargs)
 
 
+class Annonce(models.Model):
+    titre = models.CharField("titre", max_length=200)
+    contenu = models.TextField("contenu")
+    auteur = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        verbose_name="auteur",
+        on_delete=models.PROTECT,
+        related_name="annonces",
+    )
+    publie_le = models.DateTimeField("publiée le", auto_now_add=True)
+
+    class Meta:
+        ordering = ["-publie_le", "-id"]
+        verbose_name = "annonce"
+        verbose_name_plural = "annonces"
+
+    def __str__(self):
+        return self.titre
+
+
 class SignalementQuerySet(models.QuerySet):
     def par_priorite(self):
         """Haute d'abord, puis moyenne, puis basse ; à égalité, les plus anciennes d'abord."""
@@ -88,7 +111,7 @@ class Signalement(models.Model):
         "priorité", max_length=10, choices=Priorite.choices, default=Priorite.MOYENNE
     )
     statut = models.CharField(
-        "statut", max_length=10, choices=Statut.choices, default=Statut.NOUVELLE
+        "statut", max_length=20, choices=Statut.choices, default=Statut.NOUVELLE
     )
     categorie = models.ForeignKey(
         Categorie,
@@ -111,6 +134,8 @@ class Signalement(models.Model):
         related_name="signalements_pris_en_charge",
     )
     commentaire_resolution = models.TextField("commentaire de résolution", blank=True)
+    validation_demandeur = models.BooleanField("validation du demandeur", default=False)
+    validation_gestionnaire = models.BooleanField("validation du gestionnaire", default=False)
     cree_le = models.DateTimeField("créé le", auto_now_add=True)
     maj_le = models.DateTimeField("mis à jour le", auto_now=True)
 
@@ -139,6 +164,10 @@ class Signalement(models.Model):
     @property
     def peut_etre_resolu(self):
         return self.statut == Statut.EN_COURS
+
+    @property
+    def peut_etre_valide(self):
+        return self.statut == Statut.ATTENTE_VALIDATION
 
     @property
     def badge_statut(self):
@@ -178,9 +207,9 @@ class Signalement(models.Model):
         if nouveau == Statut.EN_COURS:
             if not est_gestionnaire(user):
                 raise ValidationError("Seul un gestionnaire peut prendre en charge une demande.")
-        elif nouveau == Statut.RESOLUE:
+        elif nouveau == Statut.ATTENTE_VALIDATION:
             if not est_gestionnaire(user):
-                raise ValidationError("Seul un gestionnaire peut résoudre une demande.")
+                raise ValidationError("Seul un gestionnaire peut proposer la fin du traitement.")
             if not commentaire:
                 raise ValidationError("Un commentaire de résolution est obligatoire.")
         elif nouveau == Statut.RETIREE:
@@ -191,8 +220,10 @@ class Signalement(models.Model):
             self.statut = nouveau
             if nouveau == Statut.EN_COURS:
                 self.gestionnaire = user
-            elif nouveau == Statut.RESOLUE:
+            elif nouveau == Statut.ATTENTE_VALIDATION:
                 self.commentaire_resolution = commentaire
+                self.validation_demandeur = False
+                self.validation_gestionnaire = False
             self.save()
             HistoriqueStatut.objects.create(
                 signalement=self,
@@ -202,6 +233,53 @@ class Signalement(models.Model):
                 commentaire=commentaire,
             )
 
+    def valider_fermeture(self, user):
+        if self.statut != Statut.ATTENTE_VALIDATION:
+            raise ValidationError("Ce signalement n'est pas en attente de validation.")
+        if user.pk == self.demandeur_id:
+            champ = "validation_demandeur"
+        elif est_gestionnaire(user) and user.pk == self.gestionnaire_id:
+            champ = "validation_gestionnaire"
+        else:
+            raise ValidationError("Seuls le demandeur et le gestionnaire assigné peuvent valider.")
+        with transaction.atomic():
+            setattr(self, champ, True)
+            ferme = self.validation_demandeur and self.validation_gestionnaire
+            ancien = self.statut
+            if ferme:
+                self.statut = Statut.RESOLUE
+            self.save()
+            if ferme:
+                HistoriqueStatut.objects.create(
+                    signalement=self, ancien_statut=ancien,
+                    nouveau_statut=Statut.RESOLUE, par=user,
+                    commentaire="Fermeture validée par les deux parties.",
+                )
+
+    def refuser_fermeture(self, user, commentaire):
+        if self.statut != Statut.ATTENTE_VALIDATION:
+            raise ValidationError("Ce signalement n'est pas en attente de validation.")
+        if user.pk not in (self.demandeur_id, self.gestionnaire_id):
+            raise ValidationError("Vous ne pouvez pas refuser cette fermeture.")
+        commentaire = (commentaire or "").strip()
+        if not commentaire:
+            raise ValidationError("Un commentaire est obligatoire pour refuser la fermeture.")
+        self.changer_statut(Statut.EN_COURS, user, commentaire)
+
+
+class MessageSignalement(models.Model):
+    signalement = models.ForeignKey(
+        Signalement, on_delete=models.CASCADE, related_name="messages_discussion"
+    )
+    auteur = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    contenu = models.TextField("message")
+    date = models.DateTimeField("date", auto_now_add=True)
+
+    class Meta:
+        ordering = ["date", "id"]
+        verbose_name = "message de signalement"
+        verbose_name_plural = "messages de signalement"
+
 
 class HistoriqueStatut(models.Model):
     signalement = models.ForeignKey(
@@ -210,8 +288,8 @@ class HistoriqueStatut(models.Model):
         on_delete=models.CASCADE,
         related_name="historiques",
     )
-    ancien_statut = models.CharField("ancien statut", max_length=10, choices=Statut.choices)
-    nouveau_statut = models.CharField("nouveau statut", max_length=10, choices=Statut.choices)
+    ancien_statut = models.CharField("ancien statut", max_length=20, choices=Statut.choices)
+    nouveau_statut = models.CharField("nouveau statut", max_length=20, choices=Statut.choices)
     par = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         verbose_name="par",

@@ -1,6 +1,6 @@
 {% if page_obj %}
 <div class="table-responsive">
-  <table class="table table-striped align-middle bg-white">
+  <table class="table app-table align-middle">
     <thead><tr><th>Titre</th><th>Catégorie</th><th>Lieu</th><th>Priorité</th><th>État</th><th>Date</th></tr></thead>
     <tbody>
     {% for s in page_obj %}
@@ -10,11 +10,11 @@
             <a href="{% url 'signalement_detail' s.pk %}">{{ s.titre }}</a>
           {% else %}{{ s.titre }}{% endif %}
         </td>
-        <td>{{ s.categorie.nom }}</td>
-        <td>{{ s.lieu }}</td>
+        <td><span class="table-category"><i class="bi bi-tag me-1"></i>{{ s.categorie.nom }}</span></td>
+        <td><i class="bi bi-geo-alt me-1 text-muted"></i>{{ s.lieu }}</td>
         <td><span class="badge text-bg-{{ s.couleur_priorite }}">{{ s.get_priorite_display }}</span></td>
         <td><span class="badge {{ s.badge_statut }}">{{ s.get_statut_display }}</span></td>
-        <td>{{ s.cree_le|date:"d/m/Y H:i" }}</td>
+        <td><span class="date-cell"><i class="bi bi-calendar3 me-1"></i>{{ s.cree_le|date:"d/m/Y H:i" }}</span></td>
       </tr>
     {% endfor %}
     </tbody>

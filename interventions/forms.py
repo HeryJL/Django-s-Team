@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 
-from .models import Categorie, Signalement
+from .models import Annonce, Categorie, MessageSignalement, Signalement
 
 
 class BootstrapMixin:
@@ -39,6 +39,38 @@ class ResolutionForm(BootstrapMixin, forms.Form):
         widget=forms.Textarea(attrs={"rows": 4}),
         error_messages={"required": "Le commentaire de résolution est obligatoire."},
     )
+
+
+class MessageSignalementForm(BootstrapMixin, forms.ModelForm):
+    class Meta:
+        model = MessageSignalement
+        fields = ["contenu"]
+        widgets = {"contenu": forms.Textarea(attrs={"rows": 3})}
+
+    def clean_contenu(self):
+        contenu = self.cleaned_data["contenu"].strip()
+        if not contenu:
+            raise forms.ValidationError("Le message ne peut pas être vide.")
+        return contenu
+
+
+class AnnonceForm(BootstrapMixin, forms.ModelForm):
+    class Meta:
+        model = Annonce
+        fields = ["titre", "contenu"]
+        widgets = {"contenu": forms.Textarea(attrs={"rows": 6})}
+
+    def clean_titre(self):
+        titre = self.cleaned_data["titre"].strip()
+        if len(titre) < 3:
+            raise forms.ValidationError("Le titre doit contenir au moins 3 caractères.")
+        return titre
+
+    def clean_contenu(self):
+        contenu = self.cleaned_data["contenu"].strip()
+        if not contenu:
+            raise forms.ValidationError("Le contenu de l'annonce est obligatoire.")
+        return contenu
 
 
 class InscriptionForm(BootstrapMixin, UserCreationForm):

@@ -1,22 +1,40 @@
 {% extends "base.html" %}
+{% block title %}Accueil{% endblock %}
 {% block content %}
-<div class="p-4 p-md-5 mb-4 bg-white rounded-3 border">
-  <h1 class="display-6">Suivi des demandes d'intervention</h1>
-  <p class="lead">Signalez un problème de matériel ou de locaux et suivez-le jusqu'à sa résolution.</p>
+<section class="hero-panel mb-5">
+  <div class="hero-copy">
+    <p class="eyebrow"><i class="bi bi-shield-check me-2"></i>Plateforme de pilotage</p>
+    <h1>Les interventions,<br><span>au bon moment.</span></h1>
+    <p class="hero-lead">Signalez un problème, échangez avec votre gestionnaire et gardez une trace claire de chaque étape.</p>
   {% if user.is_authenticated %}
-    <a class="btn btn-primary" href="{% url 'signalement_create' %}">Déposer un signalement</a>
-    <a class="btn btn-outline-secondary" href="{% url 'mes_signalements' %}">Mes signalements</a>
+    <a class="btn btn-primary btn-lg" href="{% url 'signalement_create' %}"><i class="bi bi-plus-circle me-2"></i>Déposer un signalement</a>
+    <a class="btn btn-outline-dark btn-lg" href="{% url 'mes_signalements' %}">Mes signalements</a>
   {% else %}
-    <a class="btn btn-primary" href="{% url 'login' %}">Se connecter</a>
-    <a class="btn btn-outline-secondary" href="{% url 'inscription' %}">Créer un compte</a>
+    <a class="btn btn-primary btn-lg" href="{% url 'login' %}"><i class="bi bi-arrow-right-circle me-2"></i>Se connecter</a>
+    <a class="btn btn-outline-dark btn-lg" href="{% url 'inscription' %}">Créer un compte</a>
   {% endif %}
 </div>
-<h2 class="h5">Catégories de problèmes</h2>
-<div class="row g-3">
+  <div class="hero-stat"><i class="bi bi-activity"></i><strong>Suivi centralisé</strong><span>Une vision nette, du signalement à la clôture.</span></div>
+</section>
+<div class="section-heading"><div><p class="eyebrow mb-1">Vue d'ensemble</p><h2>Activité par catégorie</h2></div><span class="section-index">01 / 01</span></div>
+<div class="row g-4">
   {% for c in categories %}
-    <div class="col-md-4"><div class="card h-100"><div class="card-body">
+    <div class="col-md-6 col-xl-3"><div class="category-card h-100"><div class="card-body">
+      <div class="category-icon">
+        {% if c.slug == "materiel-informatique" %}<i class="bi bi-laptop"></i>
+        {% elif c.slug == "locaux-mobilier" %}<i class="bi bi-building"></i>
+        {% elif c.slug == "reseau-connexion" %}<i class="bi bi-wifi"></i>
+        {% elif c.slug == "electricite" %}<i class="bi bi-lightning-charge"></i>
+        {% elif c.slug == "plomberie" %}<i class="bi bi-droplet"></i>
+        {% elif c.slug == "climatisation-ventilation" %}<i class="bi bi-fan"></i>
+        {% elif c.slug == "securite" %}<i class="bi bi-shield-lock"></i>
+        {% elif c.slug == "proprete-dechets" %}<i class="bi bi-trash3"></i>
+        {% else %}<i class="bi bi-tools"></i>{% endif %}
+      </div>
       <h3 class="h6 card-title">{{ c.nom }}</h3>
       <p class="card-text text-muted small">{{ c.description|default:"—" }}</p>
+      <p class="mb-0 category-count"><strong>{{ c.nb_en_cours }}</strong>
+        signalement{{ c.nb_en_cours|pluralize }} en cours</p>
     </div></div></div>
   {% empty %}
     <p class="text-muted">Aucune catégorie pour le moment.</p>

@@ -1,7 +1,7 @@
 from django.test import TestCase
 from django.urls import reverse
 
-from interventions.models import HistoriqueStatut, Signalement, Statut
+from interventions.models import Annonce, HistoriqueStatut, Signalement, Statut
 
 from .helpers import creer_categorie, creer_gestionnaire, creer_signalement, creer_utilisateur
 
@@ -54,8 +54,30 @@ class AccesTests(TestCase):
         self.assertEqual(self.client.get(reverse("gestionnaire_dashboard")).status_code, 403)
 
     def test_pages_publiques(self):
-        for nom in ("accueil", "categorie_list", "signalement_list", "login", "inscription"):
+        for nom in ("accueil", "annonces", "login", "inscription"):
             self.assertEqual(self.client.get(reverse(nom)).status_code, 200, nom)
+
+    def test_anciennes_listes_globales_n_existent_plus(self):
+        self.assertEqual(self.client.get("/signalements/").status_code, 404)
+        self.assertEqual(self.client.get("/categories/").status_code, 404)
+
+    def test_accueil_affiche_le_nombre_de_demandes_en_cours_par_categorie(self):
+        categorie = creer_categorie("Électricité")
+        demande = creer_signalement(self.alice, categorie=categorie)
+        demande.changer_statut(Statut.EN_COURS, self.manu)
+        response = self.client.get(reverse("accueil"))
+        self.assertEqual(response.context["categories"].get(nom="Électricité").nb_en_cours, 1)
+
+    def test_gestionnaire_n_a_pas_d_espace_demandeur(self):
+        self.client.force_login(self.manu)
+        self.assertRedirects(
+            self.client.get(reverse("mes_signalements")),
+            reverse("gestionnaire_dashboard"),
+        )
+        self.assertRedirects(
+            self.client.get(reverse("signalement_create")),
+            reverse("gestionnaire_dashboard"),
+        )
 
     def test_mutations_refusent_get(self):
         self.client.force_login(self.manu)
@@ -79,14 +101,6 @@ class AccesTests(TestCase):
         self.assertEqual(r.status_code, 403)
         self.s.refresh_from_db()
         self.assertEqual(self.s.statut, Statut.NOUVELLE)
-
-    def test_liste_publique_masque_les_retirees(self):
-        self.s.changer_statut(Statut.RETIREE, self.alice)
-        r = self.client.get(reverse("signalement_list"))
-        self.assertEqual(len(r.context["page_obj"]), 0)
-        self.client.force_login(self.manu)
-        r = self.client.get(reverse("signalement_list"))
-        self.assertEqual(len(r.context["page_obj"]), 1)
 
 
 class FluxMetierTests(TestCase):
@@ -116,6 +130,24 @@ class FluxMetierTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertTrue(r.context["form"].errors.get("titre"))
 
+    def test_gestionnaire_publie_une_annonce_visible_aux_utilisateurs(self):
+        self.client.force_login(self.manu)
+        response = self.client.post(reverse("annonce_create"), {
+            "titre": "Maintenance planifiée",
+            "contenu": "Le réseau sera indisponible samedi matin.",
+        })
+        self.assertRedirects(response, reverse("annonces"))
+        annonce = Annonce.objects.get()
+        self.assertEqual(annonce.auteur, self.manu)
+        self.client.force_login(self.alice)
+        response = self.client.get(reverse("annonces"))
+        self.assertContains(response, "Maintenance planifiée")
+        self.assertContains(response, "Le réseau sera indisponible samedi matin.")
+
+    def test_demandeur_ne_peut_pas_faire_une_annonce(self):
+        self.client.force_login(self.alice)
+        self.assertEqual(self.client.get(reverse("annonce_create")).status_code, 403)
+
     def test_retrait_par_l_auteur(self):
         self.client.force_login(self.alice)
         r = self.client.post(reverse("signalement_retirer", args=[self.s.pk]))
@@ -139,9 +171,15 @@ class FluxMetierTests(TestCase):
                              {"commentaire": "Ampoule changée."})
         self.assertRedirects(r, reverse("gestionnaire_dashboard"))
         self.s.refresh_from_db()
-        self.assertEqual(self.s.statut, Statut.RESOLUE)
+        self.assertEqual(self.s.statut, Statut.ATTENTE_VALIDATION)
         self.assertEqual(self.s.commentaire_resolution, "Ampoule changée.")
-        self.assertEqual(HistoriqueStatut.objects.filter(signalement=self.s).count(), 2)
+        self.client.force_login(self.alice)
+        self.client.post(reverse("signalement_valider_fermeture", args=[self.s.pk]))
+        self.client.force_login(self.manu)
+        self.client.post(reverse("signalement_valider_fermeture", args=[self.s.pk]))
+        self.s.refresh_from_db()
+        self.assertEqual(self.s.statut, Statut.RESOLUE)
+        self.assertEqual(HistoriqueStatut.objects.filter(signalement=self.s).count(), 3)
 
     def test_resolution_sans_commentaire_refusee(self):
         self.s.changer_statut(Statut.EN_COURS, self.manu)
@@ -150,6 +188,18 @@ class FluxMetierTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.s.refresh_from_db()
         self.assertEqual(self.s.statut, Statut.EN_COURS)
+
+    def test_discussion_accessible_aux_parties_du_signalement(self):
+        self.client.force_login(self.alice)
+        response = self.client.post(
+            reverse("signalement_detail", args=[self.s.pk]),
+            {"contenu": "Le problème est-il toujours présent ?"},
+        )
+        self.assertRedirects(response, reverse("signalement_detail", args=[self.s.pk]))
+        self.assertContains(
+            self.client.get(reverse("signalement_detail", args=[self.s.pk])),
+            "Le problème est-il toujours présent ?",
+        )
 
     def test_resolution_directe_d_une_nouvelle_refusee(self):
         self.client.force_login(self.manu)
@@ -210,7 +260,9 @@ class DashboardStatsTests(TestCase):
         s2.changer_statut(Statut.EN_COURS, manu)
         s3 = creer_signalement(alice, titre="Une résolue")
         s3.changer_statut(Statut.EN_COURS, manu)
-        s3.changer_statut(Statut.RESOLUE, manu, "Fait")
+        s3.changer_statut(Statut.ATTENTE_VALIDATION, manu, "Fait")
+        s3.valider_fermeture(alice)
+        s3.valider_fermeture(manu)
         self.client.force_login(manu)
         r = self.client.get(reverse("gestionnaire_dashboard"))
         self.assertEqual(r.context["stats"],
