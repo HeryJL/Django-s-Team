@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Nouveau signalement{% endblock %}
+{% block content %}
+<div class="row justify-content-center"><div class="col-lg-7">
+  <h1 class="h3 mb-3">Nouveau signalement</h1>
+  <form method="post" class="card card-body">
+    {% csrf_token %}
+    {% include "interventions/_form_fields.html" %}
+    <div class="d-flex gap-2">
+      <button type="submit" class="btn btn-primary">Envoyer</button>
+      <a class="btn btn-outline-secondary" href="{% url 'mes_signalements' %}">Annuler</a>
+    </div>
+  </form>
+</div></div>
+{% endblock %}

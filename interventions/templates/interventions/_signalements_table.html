@@ -1,0 +1,26 @@
+{% if page_obj %}
+<div class="table-responsive">
+  <table class="table table-striped align-middle bg-white">
+    <thead><tr><th>Titre</th><th>Catégorie</th><th>Lieu</th><th>Priorité</th><th>État</th><th>Date</th></tr></thead>
+    <tbody>
+    {% for s in page_obj %}
+      <tr>
+        <td>
+          {% if lien_detail_toujours or est_gestionnaire or s.demandeur_id == user.id %}
+            <a href="{% url 'signalement_detail' s.pk %}">{{ s.titre }}</a>
+          {% else %}{{ s.titre }}{% endif %}
+        </td>
+        <td>{{ s.categorie.nom }}</td>
+        <td>{{ s.lieu }}</td>
+        <td><span class="badge text-bg-{{ s.couleur_priorite }}">{{ s.get_priorite_display }}</span></td>
+        <td><span class="badge {{ s.badge_statut }}">{{ s.get_statut_display }}</span></td>
+        <td>{{ s.cree_le|date:"d/m/Y H:i" }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% include "interventions/_pagination.html" %}
+{% else %}
+<div class="alert alert-info">Aucune demande ne correspond.</div>
+{% endif %}

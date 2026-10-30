@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Accès refusé{% endblock %}
+{% block content %}
+<div class="alert alert-danger">
+  <h1 class="h4">403 — Accès refusé</h1>
+  <p class="mb-0">Vous n'avez pas le droit d'effectuer cette action ou de consulter cette page.</p>
+</div>
+<a class="btn btn-secondary" href="{% url 'accueil' %}">Retour à l'accueil</a>
+{% endblock %}

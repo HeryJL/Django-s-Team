@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Mes signalements{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h3 mb-0">Mes signalements</h1>
+  <a class="btn btn-primary" href="{% url 'signalement_create' %}">Nouveau signalement</a>
+</div>
+{% include "interventions/_filtres.html" %}
+{% include "interventions/_signalements_table.html" with lien_detail_toujours=True %}
+{% endblock %}

@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}{{ signalement.titre }}{% endblock %}
+{% block content %}
+<div class="row g-4">
+  <div class="col-lg-7">
+    <div class="card"><div class="card-body">
+      <div class="d-flex justify-content-between align-items-start">
+        <h1 class="h4">{{ signalement.titre }}</h1>
+        <span class="badge {{ signalement.badge_statut }} fs-6">{{ signalement.get_statut_display }}</span>
+      </div>
+      <p class="mt-2">{{ signalement.description|linebreaksbr }}</p>
+      <dl class="row mb-0">
+        <dt class="col-sm-4">Lieu</dt><dd class="col-sm-8">{{ signalement.lieu }}</dd>
+        <dt class="col-sm-4">Catégorie</dt><dd class="col-sm-8">{{ signalement.categorie.nom }}</dd>
+        <dt class="col-sm-4">Priorité</dt>
+        <dd class="col-sm-8"><span class="badge text-bg-{{ signalement.couleur_priorite }}">{{ signalement.get_priorite_display }}</span></dd>
+        <dt class="col-sm-4">Demandeur</dt><dd class="col-sm-8">{{ signalement.demandeur.username }}</dd>
+        <dt class="col-sm-4">Gestionnaire</dt><dd class="col-sm-8">{{ signalement.gestionnaire.username|default:"— non assigné" }}</dd>
+        <dt class="col-sm-4">Créé le</dt><dd class="col-sm-8">{{ signalement.cree_le|date:"d/m/Y H:i" }}</dd>
+        {% if signalement.commentaire_resolution %}
+          <dt class="col-sm-4">Résolution</dt><dd class="col-sm-8">{{ signalement.commentaire_resolution|linebreaksbr }}</dd>
+        {% endif %}
+      </dl>
+    </div></div>
+
+    <div class="d-flex flex-wrap gap-2 mt-3">
+      {% if est_auteur and signalement.peut_etre_retire %}
+        <a class="btn btn-outline-danger" href="{% url 'signalement_retirer' signalement.pk %}">Retirer ma demande</a>
+      {% endif %}
+      {% if est_gestionnaire %}
+        {% if signalement.peut_etre_pris_en_charge %}
+          <form method="post" action="{% url 'signalement_prendre_en_charge' signalement.pk %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-warning">Prendre en charge</button>
+          </form>
+        {% endif %}
+        {% if signalement.peut_etre_resolu %}
+          <a class="btn btn-success" href="{% url 'signalement_resoudre' signalement.pk %}">Marquer comme résolue</a>
+        {% endif %}
+      {% endif %}
+      <a class="btn btn-outline-secondary" href="{% if est_auteur %}{% url 'mes_signalements' %}{% else %}{% url 'gestionnaire_dashboard' %}{% endif %}">Retour</a>
+    </div>
+  </div>
+
+  <div class="col-lg-5">
+    <h2 class="h5">Historique</h2>
+    <ul class="timeline list-unstyled">
+      <li><strong>{{ signalement.cree_le|date:"d/m/Y H:i" }}</strong> — Signalement créé par {{ signalement.demandeur.username }}</li>
+      {% for h in historique %}
+        <li>
+          <strong>{{ h.date|date:"d/m/Y H:i" }}</strong> —
+          {{ h.get_ancien_statut_display }} → {{ h.get_nouveau_statut_display }}
+          par {{ h.par.username|default:"(utilisateur supprimé)" }}
+          {% if h.commentaire %}<div class="small text-muted">{{ h.commentaire|linebreaksbr }}</div>{% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>
+{% endblock %}

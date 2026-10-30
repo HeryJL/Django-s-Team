@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="p-4 p-md-5 mb-4 bg-white rounded-3 border">
+  <h1 class="display-6">Suivi des demandes d'intervention</h1>
+  <p class="lead">Signalez un problème de matériel ou de locaux et suivez-le jusqu'à sa résolution.</p>
+  {% if user.is_authenticated %}
+    <a class="btn btn-primary" href="{% url 'signalement_create' %}">Déposer un signalement</a>
+    <a class="btn btn-outline-secondary" href="{% url 'mes_signalements' %}">Mes signalements</a>
+  {% else %}
+    <a class="btn btn-primary" href="{% url 'login' %}">Se connecter</a>
+    <a class="btn btn-outline-secondary" href="{% url 'inscription' %}">Créer un compte</a>
+  {% endif %}
+</div>
+<h2 class="h5">Catégories de problèmes</h2>
+<div class="row g-3">
+  {% for c in categories %}
+    <div class="col-md-4"><div class="card h-100"><div class="card-body">
+      <h3 class="h6 card-title">{{ c.nom }}</h3>
+      <p class="card-text text-muted small">{{ c.description|default:"—" }}</p>
+    </div></div></div>
+  {% empty %}
+    <p class="text-muted">Aucune catégorie pour le moment.</p>
+  {% endfor %}
+</div>
+{% endblock %}

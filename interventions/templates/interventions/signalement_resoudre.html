@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Résoudre la demande{% endblock %}
+{% block content %}
+<div class="row justify-content-center"><div class="col-lg-7">
+  <h1 class="h4">Marquer comme résolue</h1>
+  <p class="text-muted">« {{ signalement.titre }} » — {{ signalement.lieu }}. Une demande résolue ne peut plus être modifiée.</p>
+  <form method="post" class="card card-body">
+    {% csrf_token %}
+    {% include "interventions/_form_fields.html" %}
+    <div class="d-flex gap-2">
+      <button type="submit" class="btn btn-success">Confirmer la résolution</button>
+      <a class="btn btn-outline-secondary" href="{% url 'signalement_detail' signalement.pk %}">Annuler</a>
+    </div>
+  </form>
+</div></div>
+{% endblock %}

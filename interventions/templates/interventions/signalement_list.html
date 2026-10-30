@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block title %}Demandes{% endblock %}
+{% block content %}
+<h1 class="h3 mb-3">{{ titre_page }}</h1>
+{% include "interventions/_filtres.html" %}
+{% include "interventions/_signalements_table.html" %}
+{% endblock %}

@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Tableau de bord gestionnaire{% endblock %}
+{% block content %}
+<h1 class="h3 mb-3">Demandes à traiter</h1>
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3"><div class="card text-center h-100"><div class="card-body">
+    <div class="display-6">{{ stats.total }}</div><div class="text-muted small">Total des demandes</div>
+  </div></div></div>
+  <div class="col-6 col-md-3"><div class="card text-center border-primary h-100"><div class="card-body">
+    <div class="display-6 text-primary">{{ stats.en_attente }}</div><div class="text-muted small">En attente</div>
+  </div></div></div>
+  <div class="col-6 col-md-3"><div class="card text-center border-warning h-100"><div class="card-body">
+    <div class="display-6">{{ stats.en_cours }}</div><div class="text-muted small">En cours</div>
+  </div></div></div>
+  <div class="col-6 col-md-3"><div class="card text-center border-success h-100"><div class="card-body">
+    <div class="display-6 text-success">{{ stats.resolues }}</div><div class="text-muted small">Résolues</div>
+  </div></div></div>
+</div>
+<p class="text-muted">Triées par priorité (haute d'abord) puis par date.</p>
+
+<h2 class="h5">Nouvelles ({{ nouvelles|length }})</h2>
+<div class="table-responsive mb-4">
+  <table class="table table-striped align-middle bg-white">
+    <thead><tr><th>Priorité</th><th>Titre</th><th>Lieu</th><th>Demandeur</th><th>Date</th><th></th></tr></thead>
+    <tbody>
+    {% for s in nouvelles %}
+      <tr>
+        <td><span class="badge text-bg-{{ s.couleur_priorite }}">{{ s.get_priorite_display }}</span></td>
+        <td><a href="{% url 'signalement_detail' s.pk %}">{{ s.titre }}</a></td>
+        <td>{{ s.lieu }}</td>
+        <td>{{ s.demandeur.username }}</td>
+        <td>{{ s.cree_le|date:"d/m/Y H:i" }}</td>
+        <td>
+          <form method="post" action="{% url 'signalement_prendre_en_charge' s.pk %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-sm btn-warning">Prendre en charge</button>
+          </form>
+        </td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="6" class="text-muted">Aucune nouvelle demande.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<h2 class="h5">En cours ({{ en_cours|length }})</h2>
+<div class="table-responsive">
+  <table class="table table-striped align-middle bg-white">
+    <thead><tr><th>Priorité</th><th>Titre</th><th>Lieu</th><th>Gestionnaire</th><th>Date</th><th></th></tr></thead>
+    <tbody>
+    {% for s in en_cours %}
+      <tr>
+        <td><span class="badge text-bg-{{ s.couleur_priorite }}">{{ s.get_priorite_display }}</span></td>
+        <td><a href="{% url 'signalement_detail' s.pk %}">{{ s.titre }}</a></td>
+        <td>{{ s.lieu }}</td>
+        <td>{{ s.gestionnaire.username|default:"—" }}</td>
+        <td>{{ s.cree_le|date:"d/m/Y H:i" }}</td>
+        <td><a class="btn btn-sm btn-success" href="{% url 'signalement_resoudre' s.pk %}">Résoudre</a></td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="6" class="text-muted">Aucune demande en cours.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Confirmer le retrait{% endblock %}
+{% block content %}
+<div class="row justify-content-center"><div class="col-lg-6">
+  <div class="card border-danger"><div class="card-body">
+    <h1 class="h4">Retirer cette demande ?</h1>
+    <p>Vous allez retirer « <strong>{{ signalement.titre }}</strong> ». Cette action est définitive : une demande retirée ne peut plus être rouverte ni traitée.</p>
+    <form method="post" class="d-flex gap-2">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-danger">Oui, retirer</button>
+      <a class="btn btn-outline-secondary" href="{% url 'signalement_detail' signalement.pk %}">Annuler</a>
+    </form>
+  </div></div>
+</div></div>
+{% endblock %}

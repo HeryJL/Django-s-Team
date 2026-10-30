@@ -1,0 +1,14 @@
+<form method="get" class="row g-2 mb-3">
+  <div class="col-md-6">
+    <input type="search" name="q" value="{{ q }}" class="form-control" placeholder="Rechercher par titre…">
+  </div>
+  <div class="col-md-4">
+    <select name="statut" class="form-select">
+      <option value="">Tous les états</option>
+      {% for valeur, libelle in statuts %}
+        <option value="{{ valeur }}"{% if valeur == statut %} selected{% endif %}>{{ libelle }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-md-2 d-grid"><button type="submit" class="btn btn-outline-primary">Filtrer</button></div>
+</form>
