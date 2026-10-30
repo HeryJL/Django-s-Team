@@ -1,14 +1,19 @@
-<form method="get" class="row g-2 mb-3">
-  <div class="col-md-6">
-    <input type="search" name="q" value="{{ q }}" class="form-control" placeholder="Rechercher par titre…">
+<form method="get" class="toolbar" role="search" aria-label="Filtrer les demandes">
+  <div class="toolbar-field toolbar-field--search">
+    <label class="field-label" for="filtre-q">Recherche</label>
+    <input id="filtre-q" type="search" name="q" value="{{ q }}" class="form-control" placeholder="Titre du signalement…">
   </div>
-  <div class="col-md-4">
-    <select name="statut" class="form-select">
+  <div class="toolbar-field toolbar-field--select">
+    <label class="field-label" for="filtre-statut">État</label>
+    <select id="filtre-statut" name="statut" class="form-select">
       <option value="">Tous les états</option>
       {% for valeur, libelle in statuts %}
         <option value="{{ valeur }}"{% if valeur == statut %} selected{% endif %}>{{ libelle }}</option>
       {% endfor %}
     </select>
   </div>
-  <div class="col-md-2 d-grid"><button type="submit" class="btn btn-outline-primary">Filtrer</button></div>
+  <button type="submit" class="btn btn--dark">Filtrer</button>
+  {% if q or statut %}
+    <a class="toolbar-reset" href="{{ request.path }}">Réinitialiser</a>
+  {% endif %}
 </form>

@@ -1,9 +1,15 @@
 {% extends "base.html" %}
 {% block title %}Mes signalements{% endblock %}
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3">
-  <div><p class="eyebrow mb-1">Espace personnel</p><h1 class="page-title mb-0">Mes signalements</h1></div>
-  <a class="btn btn-primary" href="{% url 'signalement_create' %}"><i class="bi bi-plus-lg me-2"></i>Nouveau signalement</a>
+<div class="page-head">
+  <div>
+    <p class="kicker">Espace personnel</p>
+    <h1 class="page-title">Mes signalements</h1>
+    <p class="page-sub">Retrouvez ici chaque demande que vous avez déposée, son état et les échanges avec le gestionnaire.</p>
+  </div>
+  <div class="page-head-actions">
+    <a class="btn btn--primary" href="{% url 'signalement_create' %}"><svg class="icon" aria-hidden="true"><use href="#i-plus-lg"></use></svg>Nouveau signalement</a>
+  </div>
 </div>
 {% include "interventions/_filtres.html" %}
 {% include "interventions/_signalements_table.html" with lien_detail_toujours=True %}

@@ -1,43 +1,76 @@
 {% extends "base.html" %}
 {% block title %}Accueil{% endblock %}
 {% block content %}
-<section class="hero-panel mb-5">
+<section class="hero">
   <div class="hero-copy">
-    <p class="eyebrow"><i class="bi bi-shield-check me-2"></i>Plateforme de pilotage</p>
-    <h1>Les interventions,<br><span>au bon moment.</span></h1>
-    <p class="hero-lead">Signalez un problème, échangez avec votre gestionnaire et gardez une trace claire de chaque étape.</p>
-  {% if user.is_authenticated %}
-    <a class="btn btn-primary btn-lg" href="{% url 'signalement_create' %}"><i class="bi bi-plus-circle me-2"></i>Déposer un signalement</a>
-    <a class="btn btn-outline-dark btn-lg" href="{% url 'mes_signalements' %}">Mes signalements</a>
-  {% else %}
-    <a class="btn btn-primary btn-lg" href="{% url 'login' %}"><i class="bi bi-arrow-right-circle me-2"></i>Se connecter</a>
-    <a class="btn btn-outline-dark btn-lg" href="{% url 'inscription' %}">Créer un compte</a>
-  {% endif %}
-</div>
-  <div class="hero-stat"><i class="bi bi-activity"></i><strong>Suivi centralisé</strong><span>Une vision nette, du signalement à la clôture.</span></div>
+    <p class="kicker">Guichet interventions</p>
+    <h1>Les interventions,<br><em>au bon moment.</em></h1>
+    <p class="hero-lead">Signalez un problème, suivez son traitement et gardez une trace claire de chaque étape, du premier message à la validation finale.</p>
+    <div class="hero-actions">
+      {% if user.is_authenticated %}
+        <a class="btn btn--primary btn--lg" href="{% url 'signalement_create' %}">Déposer un signalement</a>
+        <a class="btn btn--outline btn--lg" href="{% url 'mes_signalements' %}">Mes signalements</a>
+      {% else %}
+        <a class="btn btn--primary btn--lg" href="{% url 'login' %}">Se connecter</a>
+        <a class="btn btn--outline btn--lg" href="{% url 'inscription' %}">Créer un compte</a>
+      {% endif %}
+    </div>
+  </div>
+
+  <aside class="process" aria-label="Déroulé d’un signalement">
+    <p class="process-title">Le parcours d’une demande</p>
+    <ol class="process-steps">
+      <li>
+        <span class="step-num">01</span>
+        <strong>Signaler</strong>
+        <p>Décrivez le problème, le lieu et la priorité.</p>
+      </li>
+      <li>
+        <span class="step-num">02</span>
+        <strong>Suivre</strong>
+        <p>Un gestionnaire prend en charge et documente chaque étape.</p>
+      </li>
+      <li>
+        <span class="step-num">03</span>
+        <strong>Valider</strong>
+        <p>Demandeur et gestionnaire confirment ensemble la clôture.</p>
+      </li>
+    </ol>
+  </aside>
 </section>
-<div class="section-heading"><div><p class="eyebrow mb-1">Vue d'ensemble</p><h2>Activité par catégorie</h2></div><span class="section-index">01 / 01</span></div>
-<div class="row g-4">
-  {% for c in categories %}
-    <div class="col-md-6 col-xl-3"><div class="category-card h-100"><div class="card-body">
-      <div class="category-icon">
-        {% if c.slug == "materiel-informatique" %}<i class="bi bi-laptop"></i>
-        {% elif c.slug == "locaux-mobilier" %}<i class="bi bi-building"></i>
-        {% elif c.slug == "reseau-connexion" %}<i class="bi bi-wifi"></i>
-        {% elif c.slug == "electricite" %}<i class="bi bi-lightning-charge"></i>
-        {% elif c.slug == "plomberie" %}<i class="bi bi-droplet"></i>
-        {% elif c.slug == "climatisation-ventilation" %}<i class="bi bi-fan"></i>
-        {% elif c.slug == "securite" %}<i class="bi bi-shield-lock"></i>
-        {% elif c.slug == "proprete-dechets" %}<i class="bi bi-trash3"></i>
-        {% else %}<i class="bi bi-tools"></i>{% endif %}
-      </div>
-      <h3 class="h6 card-title">{{ c.nom }}</h3>
-      <p class="card-text text-muted small">{{ c.description|default:"—" }}</p>
-      <p class="mb-0 category-count"><strong>{{ c.nb_en_cours }}</strong>
-        signalement{{ c.nb_en_cours|pluralize }} en cours</p>
-    </div></div></div>
-  {% empty %}
-    <p class="text-muted">Aucune catégorie pour le moment.</p>
-  {% endfor %}
-</div>
+
+<section class="cat-section" aria-labelledby="titre-categories">
+  <div class="section-head">
+    <div>
+      <p class="kicker">Vue d’ensemble</p>
+      <h2 id="titre-categories">Activité par catégorie</h2>
+    </div>
+    <p class="section-meta"><strong>{{ categories|length }}</strong> catégorie{{ categories|length|pluralize }} suivie{{ categories|length|pluralize }}</p>
+  </div>
+
+  <div class="cat-grid">
+    {% for c in categories %}
+      <article class="cat">
+        <div class="cat-top">
+          <span class="cat-icon" aria-hidden="true">
+            {% if c.slug == "materiel-informatique" %}<svg class="icon" aria-hidden="true"><use href="#i-laptop"></use></svg>
+            {% elif c.slug == "locaux-mobilier" %}<svg class="icon" aria-hidden="true"><use href="#i-building"></use></svg>
+            {% elif c.slug == "reseau-connexion" %}<svg class="icon" aria-hidden="true"><use href="#i-wifi"></use></svg>
+            {% elif c.slug == "electricite" %}<svg class="icon" aria-hidden="true"><use href="#i-lightning-charge"></use></svg>
+            {% elif c.slug == "plomberie" %}<svg class="icon" aria-hidden="true"><use href="#i-droplet"></use></svg>
+            {% elif c.slug == "climatisation-ventilation" %}<svg class="icon" aria-hidden="true"><use href="#i-fan"></use></svg>
+            {% elif c.slug == "securite" %}<svg class="icon" aria-hidden="true"><use href="#i-shield-lock"></use></svg>
+            {% elif c.slug == "proprete-dechets" %}<svg class="icon" aria-hidden="true"><use href="#i-trash3"></use></svg>
+            {% else %}<svg class="icon" aria-hidden="true"><use href="#i-tools"></use></svg>{% endif %}
+          </span>
+          <span class="cat-count"><strong>{{ c.nb_en_cours }}</strong> en cours</span>
+        </div>
+        <h3>{{ c.nom }}</h3>
+        <p>{{ c.description|default:"Aucune description pour cette catégorie." }}</p>
+      </article>
+    {% empty %}
+      <div class="cat"><p>Aucune catégorie pour le moment.</p></div>
+    {% endfor %}
+  </div>
+</section>
 {% endblock %}

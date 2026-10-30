@@ -1,15 +1,22 @@
 {% extends "base.html" %}
 {% block title %}Nouveau signalement{% endblock %}
 {% block content %}
-<div class="row justify-content-center"><div class="col-lg-7">
-  <h1 class="h3 mb-3">Nouveau signalement</h1>
-  <form method="post" class="card card-body">
+<div class="narrow">
+  <div class="page-head">
+    <div>
+      <p class="kicker">Espace personnel</p>
+      <h1 class="page-title">Nouveau signalement</h1>
+      <p class="page-sub">Décrivez le problème le plus précisément possible : un lieu, un titre clair et une priorité juste accélèrent le traitement.</p>
+    </div>
+  </div>
+
+  <form method="post" class="form-card">
     {% csrf_token %}
     {% include "interventions/_form_fields.html" %}
-    <div class="d-flex gap-2">
-      <button type="submit" class="btn btn-primary">Envoyer</button>
-      <a class="btn btn-outline-secondary" href="{% url 'mes_signalements' %}">Annuler</a>
+    <div class="form-actions">
+      <button type="submit" class="btn btn--primary">Envoyer le signalement</button>
+      <a class="btn btn--ghost" href="{% url 'mes_signalements' %}">Annuler</a>
     </div>
   </form>
-</div></div>
+</div>
 {% endblock %}

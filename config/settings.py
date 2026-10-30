@@ -87,7 +87,7 @@ LOGIN_URL = "login"
 LOGIN_REDIRECT_URL = "accueil"
 LOGOUT_REDIRECT_URL = "accueil"
 
-# Classes Bootstrap pour django.contrib.messages
+# Classes de couleur des messages (voir static/css/app.css)
 MESSAGE_TAGS = {
     messages.DEBUG: "secondary",
     messages.INFO: "info",

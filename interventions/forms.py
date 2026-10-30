@@ -5,7 +5,7 @@ from .models import Annonce, Categorie, MessageSignalement, Signalement
 
 
 class BootstrapMixin:
-    """Ajoute les classes Bootstrap aux widgets."""
+    """Ajoute les classes de widgets attendues par static/css/app.css."""
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

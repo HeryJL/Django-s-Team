@@ -1,20 +1,29 @@
 {% if page_obj %}
-<div class="table-responsive">
-  <table class="table app-table align-middle">
-    <thead><tr><th>Titre</th><th>Catégorie</th><th>Lieu</th><th>Priorité</th><th>État</th><th>Date</th></tr></thead>
+<div class="table-wrap">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th scope="col">Titre</th>
+        <th scope="col">Catégorie</th>
+        <th scope="col">Lieu</th>
+        <th scope="col">Priorité</th>
+        <th scope="col">État</th>
+        <th scope="col">Date</th>
+      </tr>
+    </thead>
     <tbody>
     {% for s in page_obj %}
       <tr>
-        <td>
+        <td class="cell-title" data-label="Titre">
           {% if lien_detail_toujours or est_gestionnaire or s.demandeur_id == user.id %}
             <a href="{% url 'signalement_detail' s.pk %}">{{ s.titre }}</a>
           {% else %}{{ s.titre }}{% endif %}
         </td>
-        <td><span class="table-category"><i class="bi bi-tag me-1"></i>{{ s.categorie.nom }}</span></td>
-        <td><i class="bi bi-geo-alt me-1 text-muted"></i>{{ s.lieu }}</td>
-        <td><span class="badge text-bg-{{ s.couleur_priorite }}">{{ s.get_priorite_display }}</span></td>
-        <td><span class="badge {{ s.badge_statut }}">{{ s.get_statut_display }}</span></td>
-        <td><span class="date-cell"><i class="bi bi-calendar3 me-1"></i>{{ s.cree_le|date:"d/m/Y H:i" }}</span></td>
+        <td class="cell-muted" data-label="Catégorie">{{ s.categorie.nom }}</td>
+        <td data-label="Lieu">{{ s.lieu }}</td>
+        <td data-label="Priorité"><span class="badge text-bg-{{ s.couleur_priorite }}">{{ s.get_priorite_display }}</span></td>
+        <td data-label="État"><span class="badge {{ s.badge_statut }}">{{ s.get_statut_display }}</span></td>
+        <td class="cell-date" data-label="Date">{{ s.cree_le|date:"d/m/Y · H:i" }}</td>
       </tr>
     {% endfor %}
     </tbody>
@@ -22,5 +31,9 @@
 </div>
 {% include "interventions/_pagination.html" %}
 {% else %}
-<div class="alert alert-info">Aucune demande ne correspond.</div>
+<div class="empty-state">
+  <span class="empty-icon" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-inbox"></use></svg></span>
+  <h2>Aucune demande ne correspond</h2>
+  <p>Modifiez la recherche ou l’état sélectionné pour retrouver vos demandes.</p>
+</div>
 {% endif %}

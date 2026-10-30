@@ -1,98 +1,175 @@
 {% extends "base.html" %}
 {% block title %}Tableau de bord gestionnaire{% endblock %}
 {% block content %}
-<div class="mb-4"><p class="eyebrow mb-1"><i class="bi bi-grid-1x2 me-2"></i>Pilotage opérationnel</p><h1 class="page-title mb-0">Demandes à traiter</h1></div>
-<div class="row g-3 mb-4">
-  <div class="col-6 col-md-3"><div class="card text-center h-100"><div class="card-body">
-    <div class="display-6"><i class="bi bi-collection me-2 text-primary"></i>{{ stats.total }}</div><div class="text-muted small">Total des demandes</div>
-  </div></div></div>
-  <div class="col-6 col-md-3"><div class="card text-center border-primary h-100"><div class="card-body">
-    <div class="display-6 text-primary"><i class="bi bi-hourglass-split me-2"></i>{{ stats.en_attente }}</div><div class="text-muted small">En attente</div>
-  </div></div></div>
-  <div class="col-6 col-md-3"><div class="card text-center border-warning h-100"><div class="card-body">
-    <div class="display-6"><i class="bi bi-arrow-repeat me-2 text-warning"></i>{{ stats.en_cours }}</div><div class="text-muted small">En cours</div>
-  </div></div></div>
-  <div class="col-6 col-md-3"><div class="card text-center border-success h-100"><div class="card-body">
-    <div class="display-6 text-success"><i class="bi bi-check2-circle me-2"></i>{{ stats.resolues }}</div><div class="text-muted small">Résolues</div>
-  </div></div></div>
-</div>
-<p class="text-muted">Triées par priorité (haute d'abord) puis par date.</p>
-
-<h2 class="h5">Nouvelles ({{ nouvelles|length }})</h2>
-<div class="table-responsive mb-4">
-  <table class="table table-striped align-middle bg-white">
-    <thead><tr><th>Priorité</th><th>Titre</th><th>Lieu</th><th>Demandeur</th><th>Date</th><th></th></tr></thead>
-    <tbody>
-    {% for s in nouvelles %}
-      <tr>
-        <td><span class="badge text-bg-{{ s.couleur_priorite }}">{{ s.get_priorite_display }}</span></td>
-        <td><a href="{% url 'signalement_detail' s.pk %}">{{ s.titre }}</a></td>
-        <td>{{ s.lieu }}</td>
-        <td>{{ s.demandeur.username }}</td>
-        <td>{{ s.cree_le|date:"d/m/Y H:i" }}</td>
-        <td>
-          <form method="post" action="{% url 'signalement_prendre_en_charge' s.pk %}">
-            {% csrf_token %}
-            <button type="submit" class="btn btn-sm btn-warning">Prendre en charge</button>
-          </form>
-        </td>
-      </tr>
-    {% empty %}
-      <tr><td colspan="6" class="text-muted">Aucune nouvelle demande.</td></tr>
-    {% endfor %}
-    </tbody>
-  </table>
+<div class="page-head">
+  <div>
+    <p class="kicker">Pilotage opérationnel</p>
+    <h1 class="page-title">Demandes à traiter</h1>
+    <p class="page-sub">La file d’attente est triée par priorité, puis par ancienneté. Prenez en charge une demande pour la faire passer « en cours ».</p>
+  </div>
 </div>
 
-<h2 class="h5">En cours ({{ en_cours|length }})</h2>
-<div class="table-responsive">
-  <table class="table table-striped align-middle bg-white">
-    <thead><tr><th>Priorité</th><th>Titre</th><th>Lieu</th><th>Gestionnaire</th><th>Date</th><th></th></tr></thead>
-    <tbody>
-    {% for s in en_cours %}
-      <tr>
-        <td><span class="badge text-bg-{{ s.couleur_priorite }}">{{ s.get_priorite_display }}</span></td>
-        <td><a href="{% url 'signalement_detail' s.pk %}">{{ s.titre }}</a></td>
-        <td>{{ s.lieu }}</td>
-        <td>{{ s.gestionnaire.username|default:"—" }}</td>
-        <td>{{ s.cree_le|date:"d/m/Y H:i" }}</td>
-        <td><a class="btn btn-sm btn-success" href="{% url 'signalement_resoudre' s.pk %}">Résoudre</a></td>
-      </tr>
-    {% empty %}
-      <tr><td colspan="6" class="text-muted">Aucune demande en cours.</td></tr>
-    {% endfor %}
-    </tbody>
-  </table>
+<div class="kpis">
+  <div class="kpi">
+    <p class="kpi-num">{{ stats.total }}</p>
+    <p class="kpi-label"><svg class="icon" aria-hidden="true"><use href="#i-collection"></use></svg>Total des demandes</p>
+  </div>
+  <div class="kpi kpi--waiting">
+    <p class="kpi-num">{{ stats.en_attente }}</p>
+    <p class="kpi-label"><svg class="icon" aria-hidden="true"><use href="#i-hourglass-split"></use></svg>En attente</p>
+  </div>
+  <div class="kpi kpi--active">
+    <p class="kpi-num">{{ stats.en_cours }}</p>
+    <p class="kpi-label"><svg class="icon" aria-hidden="true"><use href="#i-arrow-repeat"></use></svg>En cours</p>
+  </div>
+  <div class="kpi kpi--done">
+    <p class="kpi-num">{{ stats.resolues }}</p>
+    <p class="kpi-label"><svg class="icon" aria-hidden="true"><use href="#i-check2-circle"></use></svg>Résolues</p>
+  </div>
 </div>
 
-<h2 class="h5 mt-4">En attente des validations ({{ en_attente_validation|length }})</h2>
-<div class="table-responsive mb-4">
-  <table class="table table-striped align-middle bg-white">
-    <thead><tr><th>Titre</th><th>Demandeur</th><th>Validation demandeur</th><th>Validation gestionnaire</th></tr></thead>
-    <tbody>
-    {% for s in en_attente_validation %}
-      <tr>
-        <td><a href="{% url 'signalement_detail' s.pk %}">{{ s.titre }}</a></td>
-        <td>{{ s.demandeur.username }}</td>
-        <td>{% if s.validation_demandeur %}Validée{% else %}En attente{% endif %}</td>
-        <td>{% if s.validation_gestionnaire %}Validée{% else %}En attente{% endif %}</td>
-      </tr>
-    {% empty %}<tr><td colspan="4" class="text-muted">Aucune demande en attente.</td></tr>{% endfor %}
-    </tbody>
-  </table>
-</div>
+<section class="panel" aria-labelledby="titre-nouvelles">
+  <div class="panel-head">
+    <h2 id="titre-nouvelles">Nouvelles demandes</h2>
+    <span class="panel-count">{{ nouvelles|length }} à prendre en charge</span>
+  </div>
+  {% if nouvelles %}
+  <div class="table-wrap table-wrap--flush">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th scope="col">Priorité</th>
+          <th scope="col">Titre</th>
+          <th scope="col">Lieu</th>
+          <th scope="col">Demandeur</th>
+          <th scope="col">Date</th>
+          <th scope="col"><span class="visually-hidden">Action</span></th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for s in nouvelles %}
+        <tr>
+          <td data-label="Priorité"><span class="badge text-bg-{{ s.couleur_priorite }}">{{ s.get_priorite_display }}</span></td>
+          <td class="cell-title" data-label="Titre"><a href="{% url 'signalement_detail' s.pk %}">{{ s.titre }}</a></td>
+          <td data-label="Lieu">{{ s.lieu }}</td>
+          <td class="cell-muted" data-label="Demandeur">{{ s.demandeur.username }}</td>
+          <td class="cell-date" data-label="Date">{{ s.cree_le|date:"d/m/Y · H:i" }}</td>
+          <td class="cell-actions" data-label="Action">
+            <form method="post" action="{% url 'signalement_prendre_en_charge' s.pk %}">
+              {% csrf_token %}
+              <button type="submit" class="btn btn--accent btn--sm">Prendre en charge</button>
+            </form>
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    <p class="empty">Aucune nouvelle demande.</p>
+  {% endif %}
+</section>
 
-<h2 class="h5 mt-4">Historique des tickets fermés ou retirés</h2>
-<div class="table-responsive">
-  <table class="table table-striped align-middle bg-white">
-    <thead><tr><th>Titre</th><th>Demandeur</th><th>État</th><th>Date</th></tr></thead>
-    <tbody>
-    {% for s in historique %}
-      <tr><td><a href="{% url 'signalement_detail' s.pk %}">{{ s.titre }}</a></td>
-        <td>{{ s.demandeur.username }}</td><td><span class="badge {{ s.badge_statut }}">{{ s.get_statut_display }}</span></td>
-        <td>{{ s.maj_le|date:"d/m/Y H:i" }}</td></tr>
-    {% empty %}<tr><td colspan="4" class="text-muted">Aucun ticket historique.</td></tr>{% endfor %}
-    </tbody>
-  </table>
-</div>
+<section class="panel" aria-labelledby="titre-encours">
+  <div class="panel-head">
+    <h2 id="titre-encours">Demandes en cours</h2>
+    <span class="panel-count">{{ en_cours|length }} en traitement</span>
+  </div>
+  {% if en_cours %}
+  <div class="table-wrap table-wrap--flush">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th scope="col">Priorité</th>
+          <th scope="col">Titre</th>
+          <th scope="col">Lieu</th>
+          <th scope="col">Gestionnaire</th>
+          <th scope="col">Date</th>
+          <th scope="col"><span class="visually-hidden">Action</span></th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for s in en_cours %}
+        <tr>
+          <td data-label="Priorité"><span class="badge text-bg-{{ s.couleur_priorite }}">{{ s.get_priorite_display }}</span></td>
+          <td class="cell-title" data-label="Titre"><a href="{% url 'signalement_detail' s.pk %}">{{ s.titre }}</a></td>
+          <td data-label="Lieu">{{ s.lieu }}</td>
+          <td class="cell-muted" data-label="Gestionnaire">{{ s.gestionnaire.username|default:"—" }}</td>
+          <td class="cell-date" data-label="Date">{{ s.cree_le|date:"d/m/Y · H:i" }}</td>
+          <td class="cell-actions" data-label="Action"><a class="btn btn--success btn--sm" href="{% url 'signalement_resoudre' s.pk %}">Résoudre</a></td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    <p class="empty">Aucune demande en cours.</p>
+  {% endif %}
+</section>
+
+<section class="panel" aria-labelledby="titre-validations">
+  <div class="panel-head">
+    <h2 id="titre-validations">En attente des validations</h2>
+    <span class="panel-count">{{ en_attente_validation|length }} dossier{{ en_attente_validation|length|pluralize }}</span>
+  </div>
+  {% if en_attente_validation %}
+  <div class="table-wrap table-wrap--flush">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th scope="col">Titre</th>
+          <th scope="col">Demandeur</th>
+          <th scope="col">Validation demandeur</th>
+          <th scope="col">Validation gestionnaire</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for s in en_attente_validation %}
+        <tr>
+          <td class="cell-title" data-label="Titre"><a href="{% url 'signalement_detail' s.pk %}">{{ s.titre }}</a></td>
+          <td class="cell-muted" data-label="Demandeur">{{ s.demandeur.username }}</td>
+          <td data-label="Validation demandeur">{% if s.validation_demandeur %}<span class="badge bg-success">Validée</span>{% else %}<span class="badge bg-secondary">En attente</span>{% endif %}</td>
+          <td data-label="Validation gestionnaire">{% if s.validation_gestionnaire %}<span class="badge bg-success">Validée</span>{% else %}<span class="badge bg-secondary">En attente</span>{% endif %}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    <p class="empty">Aucune demande en attente de validation.</p>
+  {% endif %}
+</section>
+
+<section class="panel" aria-labelledby="titre-historique">
+  <div class="panel-head">
+    <h2 id="titre-historique">Historique des tickets fermés ou retirés</h2>
+    <span class="panel-count">{{ historique|length }} ticket{{ historique|length|pluralize }}</span>
+  </div>
+  {% if historique %}
+  <div class="table-wrap table-wrap--flush">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th scope="col">Titre</th>
+          <th scope="col">Demandeur</th>
+          <th scope="col">État</th>
+          <th scope="col">Dernière mise à jour</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for s in historique %}
+        <tr>
+          <td class="cell-title" data-label="Titre"><a href="{% url 'signalement_detail' s.pk %}">{{ s.titre }}</a></td>
+          <td class="cell-muted" data-label="Demandeur">{{ s.demandeur.username }}</td>
+          <td data-label="État"><span class="badge {{ s.badge_statut }}">{{ s.get_statut_display }}</span></td>
+          <td class="cell-date" data-label="Mise à jour">{{ s.maj_le|date:"d/m/Y · H:i" }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    <p class="empty">Aucun ticket dans l’historique.</p>
+  {% endif %}
+</section>
 {% endblock %}

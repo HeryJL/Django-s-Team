@@ -1,7 +1,7 @@
 # Suivi des demandes d'intervention (Django)
 
 Projet M1 GL — Université de Vakinankaratra — Thème 2.
-Stack : Python 3.11+, Django 5.x, SQLite, Bootstrap 5 (CDN, style uniquement). Aucun service externe.
+Stack : Python 3.11+, Django 5.x, SQLite, interface HTML/CSS pure (aucun framework ni JavaScript). Aucun service externe requis pour l’interface.
 
 ## Installation et lancement
 
